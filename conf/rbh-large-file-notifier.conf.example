@@ -1,0 +1,25 @@
+[mysqld]
+host         = 
+database     = 
+user         = 
+password     = 
+
+[check]
+file_size            = 500GB
+file_system          = 
+check_interval_days  = 7
+
+[notify]
+table    = NOTIFIES
+database = 
+
+[mail]
+server             = 
+sender             = 
+overview_recipient = 
+subject            = Large File Report
+send_user_mail     = off
+
+[ldap]
+server = 
+dc     = 

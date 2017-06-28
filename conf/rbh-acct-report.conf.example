@@ -1,0 +1,13 @@
+[mysqld]
+host          = 
+user          = 
+password      = 
+
+[history]
+database                = 
+acct_stat_history_table = 
+
+[mail]
+server    = 
+sender    = 
+recipient = 
