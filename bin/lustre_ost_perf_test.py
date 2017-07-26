@@ -138,7 +138,7 @@ def fill_ost_perf_table( HOST, USER, PASSWD, DATABASE, TABLENAME, ost_perf_info_
                logging.info( "Inserted %s records into %s" % ( str( num_ost_names ), TABLENAME ) )
 
 
-def get_ost_lists( lfs_bin, ost_re_pattern ):
+def get_ost_state_lists( lfs_bin, ost_re_pattern ):
 
    active_ost_list   = list()
    inactive_ost_list = list()
@@ -149,12 +149,12 @@ def get_ost_lists( lfs_bin, ost_re_pattern ):
    cmd = lfs_bin + " check osts"
    
    ( status, output ) = commands.getstatusoutput( cmd )
-   
+
    if status > 0:
-      raise RuntimeError( "Error occurred during read of active OSTs: %s" % output )
-   
+      raise RuntimeError( "Error occurred during check on OSTs: %s" % output )
+
    if not output:
-      raise RuntimeError( "OST check returned an empty result!" )
+      raise RuntimeError( "Check OSTs returned an empty result!" )
    
    ost_list = output.split( '\n' )
    
@@ -198,8 +198,7 @@ def get_ost_ip_dict( lctl_bin, ost_re_pattern, ip_re_pattern ):
    
    if not output:
       raise RuntimeError( "OST connection UUID information read returned an empty result!" )
-   
-   # TODO Solve redundancy getting OST names!
+
    ost_list = output.split( '\n' )
    
    for ost_info in ost_list:
@@ -208,8 +207,14 @@ def get_ost_ip_dict( lctl_bin, ost_re_pattern, ip_re_pattern ):
       
       if idx_ost_name == -1:
          raise RuntimeError( "No OST name found in output line: %s" % ost_info )
+
+      idx_ost_name_term = ost_info.find( '-', idx_ost_name )
+
+      if idx_ost_name_term == -1:
+         raise RuntimeError( "Could not find end of OST name identified by '-' in: %s" % ost_info )
+
+      ost_name = ost_info[ idx_ost_name : idx_ost_name_term ]
       
-      ost_name = ost_info[ idx_ost_name : idx_ost_name + 7 ]
       re_match = ost_re_pattern.match( ost_name )
       
       if not re_match:
@@ -225,7 +230,7 @@ def get_ost_ip_dict( lctl_bin, ost_re_pattern, ip_re_pattern ):
       idx_ost_conn_uuid_term = ost_info.find( '@', idx_ost_conn_uuid )
       
       if idx_ost_conn_uuid_term == -1:
-         raise RuntimeError( "Could not find terminating '@' for ost_conn_uuid identification in line: %s" %s )
+         raise RuntimeError( "Could not find terminating '@' for ost_conn_uuid identification: %s" % ost_info )
       
       ost_conn_ip = ost_info[ idx_ost_conn_uuid + len( ost_conn_uuid_str ) : idx_ost_conn_uuid_term ]
       
@@ -522,7 +527,7 @@ def main():
             
             ost_ip_dict = get_ost_ip_dict( LCTL_BIN, OST_RE_PATTERN, IP_RE_PATTERN )
             
-            active_ost_list, inactive_ost_list = get_ost_lists( LFS_BIN, OST_RE_PATTERN )
+            active_ost_list, inactive_ost_list = get_ost_state_lists( LFS_BIN, OST_RE_PATTERN )
             
             if active_ost_list:
             
