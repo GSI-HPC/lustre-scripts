@@ -171,7 +171,7 @@ def get_ost_state_lists( lfs_bin, ost_re_pattern ):
       if not re_match:
          raise RuntimeError( "No valid OST name found in line: %s" % ost_info )
       
-      if 'active' in ost_info:
+      if ' active.' in ost_info:
          logging.debug( "Found active OST: %s" % ost_name )
          active_ost_list.append( ost_name )
       
@@ -214,7 +214,7 @@ def get_ost_ip_dict( lctl_bin, ost_re_pattern, ip_re_pattern ):
          raise RuntimeError( "Could not find end of OST name identified by '-' in: %s" % ost_info )
 
       ost_name = ost_info[ idx_ost_name : idx_ost_name_term ]
-      
+
       re_match = ost_re_pattern.match( ost_name )
       
       if not re_match:
