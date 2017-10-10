@@ -18,8 +18,13 @@
 #
 
 
+# QUICK SOLUTION TO FIX PARALLEL UPDATES ON DATABASE (NOT OPTIMIZED SOLUTION!!!)
+# TODO: IMPROVE PARALLEL UPDATES WITH SHARED TASK QUEUE...
+
+
 import logging
 import argparse
+import threading
 import MySQLdb
 import pwd
 import grp
@@ -28,6 +33,90 @@ from contextlib import closing
 
 
 HOST = 'localhost'
+
+
+class WorkerThread(threading.Thread):
+
+   def __init__(self, uid, gid, host, username, password, database):
+
+      threading.Thread.__init__(self)
+
+      self.uid = uid
+      self.gid = gid
+      self.name = str(uid) + ":" + str(gid)
+
+      self.host = host
+      self.username = username
+      self.password = password
+      self.database = database
+
+   def run(self):
+
+      logging.debug("Thread '%s' started!" % self.name)
+
+      self.cleanup()
+
+      logging.debug("Thread '%s' finished!" % self.name)
+
+   def cleanup(self):
+
+      try:
+
+         uid = self.uid
+         gid = self.gid
+
+         user = pwd.getpwuid(int(uid)).pw_name
+         group = grp.getgrgid(int(gid)).gr_name
+
+         do_rollback = False
+
+         with closing(MySQLdb.connect(host=self.host, user=self.username, passwd=self.password, db=self.database)) as conn:
+
+            with closing(conn.cursor()) as cur:
+
+               sql = "SELECT COUNT(*) FROM ACCT_STAT WHERE uid = '" + uid + "' AND gid = '" + gid + "';"
+               logging.debug(sql)
+               cur.execute(sql)
+               pre_count_acct_stat = int(cur.fetchone()[0])
+               logging.debug(str(pre_count_acct_stat))
+
+               sql = "SELECT COUNT(*) FROM ENTRIES WHERE uid = '" + uid + "' AND gid = '" + gid + "'"
+               logging.debug(sql)
+               cur.execute(sql)
+               pre_count_entries = int(cur.fetchone()[0])
+               logging.debug(str(pre_count_entries))
+
+               cur.execute('BEGIN')
+
+               sql = "UPDATE ENTRIES SET uid = '" + user + "', gid = '" + group + "' WHERE uid = '" + uid + "' AND gid = '" + gid + "'"
+               logging.debug(sql)
+               cur.execute(sql)
+               post_count_entries = cur.rowcount
+               logging.debug(str(post_count_entries))
+
+               if pre_count_entries == post_count_entries:
+
+                  sql = "DELETE FROM ACCT_STAT WHERE uid = '" + uid + "' AND gid = '" + gid + "';"
+                  logging.debug(sql)
+                  cur.execute(sql)
+                  post_count_acct_stat = cur.rowcount
+                  logging.debug(str(post_count_acct_stat))
+
+                  if pre_count_acct_stat == post_count_acct_stat:
+                     cur.execute('COMMIT')
+                     logging.debug('COMMITED')
+                  else:
+                     do_rollback = True
+
+               else:
+                  do_rollback = True
+
+               if do_rollback == True:
+                  cur.execute('ROLLBACK')
+                  logging.debug('ROLLBACK')
+
+      except Exception as e:
+         logging.error("Cought exception during cleanup in thread ('%s') with error message:\n%s" % (self.name, str(e)))
 
 
 def get_numeric_numeric_uid_gid_list(cur):
@@ -46,64 +135,41 @@ def get_numeric_numeric_uid_gid_list(cur):
 
    return numeric_uid_gid_list
 
+def cleanup_database(numeric_uid_gid_list, parallel_updates, host, username, password, database):
 
-def cleanup_database(numeric_uid_gid_list, cur):
+   thread_counter = 0
+   thread_handles = list()
 
-   for tup in numeric_uid_gid_list:
+   try:
 
-      try:
-         uid = tup[0]
-         gid = tup[1]
+      for tup in numeric_uid_gid_list:
 
-         user = pwd.getpwuid(int(uid)).pw_name
-         group = grp.getgrgid(int(gid)).gr_name
+         th_handle = WorkerThread(tup[0], tup[1], host, username, password, database)
+         th_handle.start()
 
-         do_rollback = False
+         thread_handles.append(th_handle)
 
-         sql = "SELECT COUNT(*) FROM ACCT_STAT WHERE uid = '" + uid + "' AND gid = '" + gid + "';"
-         logging.debug(sql)
-         cur.execute(sql)
-         pre_count_acct_stat = int(cur.fetchone()[0])
-         logging.debug(str(pre_count_acct_stat))
+         thread_counter += 1
 
-         sql = "SELECT COUNT(*) FROM ENTRIES WHERE uid = '" + uid + "' AND gid = '" + gid + "'"
-         logging.debug(sql)
-         cur.execute(sql)
-         pre_count_entries = int(cur.fetchone()[0])
-         logging.debug(str(pre_count_entries))
+         if thread_counter == parallel_updates:
 
-         cur.execute('BEGIN')
+            for th_handle in thread_handles:
 
-         sql = "UPDATE ENTRIES SET uid = '" + user + "', gid = '" + group + "' WHERE uid = '" + uid + "' AND gid = '" + gid + "'"
-         logging.debug(sql)
-         cur.execute(sql)
-         post_count_entries = cur.rowcount
-         logging.debug(str(post_count_entries))
+               logging.info("Joining thread: '%s'" % th_handle.name)
 
-         if pre_count_entries == post_count_entries:
+               th_handle.join()
 
-            sql = "DELETE FROM ACCT_STAT WHERE uid = '" + uid + "' AND gid = '" + gid + "';"
-            logging.debug(sql)
-            cur.execute(sql)
-            post_count_acct_stat = cur.rowcount
-            logging.debug(str(post_count_acct_stat))
+            thread_handles = list()
+            thread_counter = 0
 
-            if pre_count_acct_stat == post_count_acct_stat:
-               cur.execute('COMMIT')
-               logging.debug('COMMITED')
-            else:
-               do_rollback = True
+      for th_handle in thread_handles:
 
-         else:
-            do_rollback = True
-         
-         if do_rollback == True:
-            cur.execute('ROLLBACK')
-            logging.debug('ROLLBACK')
+         logging.debug("Joining thread: '%s'" % th_handle.name)
 
-      except KeyError as err:
-         logging.error('Error on LDAP lookup: %s' % err)
+         th_handle.join()
 
+   except Exception as e:
+      logging.error("Cought exception during cleanup in thread ('%s') with error message:\n%s" % (self.name, str(e)))
 
 def main():
 
@@ -117,16 +183,17 @@ def main():
    parser.add_argument('-p', '--password', dest='password', type=str, required=True,  help='Password for the Robinhood Database.')
    parser.add_argument('-H', '--host',     dest='host',     type=str, required=False, help='Database Host.', default=HOST)
    parser.add_argument('-d', '--database', dest='database', type=str, required=True,  help='Robinhood Database.')
+   parser.add_argument('-w', '--parallel-updates', dest='parallel_updates', type=int, required=False, help='Specifies parallel update count.', default=10)
 
    args = parser.parse_args()
 
    with closing(MySQLdb.connect(host=args.host, user=args.username, passwd=args.password, db=args.database)) as conn:
-      
+
       with closing(conn.cursor()) as cur:
 
          numeric_uid_gid_list = get_numeric_numeric_uid_gid_list(cur)
 
-         cleanup_database(numeric_uid_gid_list, cur)
+         cleanup_database(numeric_uid_gid_list, args.parallel_updates, args.host, args.username, args.password, args.database)
    
    logging.info('END')
 
