@@ -74,33 +74,33 @@ class WorkerThread(threading.Thread):
 
             with closing(conn.cursor()) as cur:
 
-               sql = "SELECT COUNT(*) FROM ACCT_STAT WHERE uid = '" + uid + "' AND gid = '" + gid + "';"
+               sql = "SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;"
                logging.debug(sql)
+               cur.execute(sql)
+
+               sql = "SELECT COUNT(*) FROM ACCT_STAT WHERE uid = '" + uid + "' AND gid = '" + gid + "';"
                cur.execute(sql)
                pre_count_acct_stat = int(cur.fetchone()[0])
-               logging.debug(str(pre_count_acct_stat))
+               logging.debug(sql + ": " +str(pre_count_acct_stat))
 
                sql = "SELECT COUNT(*) FROM ENTRIES WHERE uid = '" + uid + "' AND gid = '" + gid + "'"
-               logging.debug(sql)
                cur.execute(sql)
                pre_count_entries = int(cur.fetchone()[0])
-               logging.debug(str(pre_count_entries))
+               logging.debug(sql + ": " + str(pre_count_entries))
 
                cur.execute('BEGIN')
 
                sql = "UPDATE ENTRIES SET uid = '" + user + "', gid = '" + group + "' WHERE uid = '" + uid + "' AND gid = '" + gid + "'"
-               logging.debug(sql)
                cur.execute(sql)
                post_count_entries = cur.rowcount
-               logging.debug(str(post_count_entries))
+               logging.debug(sql + ": " + str(post_count_entries))
 
                if pre_count_entries == post_count_entries:
 
                   sql = "DELETE FROM ACCT_STAT WHERE uid = '" + uid + "' AND gid = '" + gid + "';"
-                  logging.debug(sql)
                   cur.execute(sql)
                   post_count_acct_stat = cur.rowcount
-                  logging.debug(str(post_count_acct_stat))
+                  logging.debug(sql + ": " + str(post_count_acct_stat))
 
                   if pre_count_acct_stat == post_count_acct_stat:
                      cur.execute('COMMIT')
@@ -183,7 +183,7 @@ def main():
    parser.add_argument('-p', '--password', dest='password', type=str, required=True,  help='Password for the Robinhood Database.')
    parser.add_argument('-H', '--host',     dest='host',     type=str, required=False, help='Database Host.', default=HOST)
    parser.add_argument('-d', '--database', dest='database', type=str, required=True,  help='Robinhood Database.')
-   parser.add_argument('-w', '--parallel-updates', dest='parallel_updates', type=int, required=False, help='Specifies parallel update count.', default=10)
+   parser.add_argument('-w', '--parallel-updates', dest='parallel_updates', type=int, required=False, help='Specifies parallel update count.', default=4)
 
    args = parser.parse_args()
 
