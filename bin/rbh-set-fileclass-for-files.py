@@ -33,7 +33,7 @@ from contextlib import closing
 
 HOST = 'localhost'
 
-FILECLASS_REG_EXP=r'^{(\+\+[a-zA-Z_]{1,1000}\+\+):((size (=|<=|>=|<|>) \d{1,2}( (KB|MB|GB|TB))?( and )*)+(?!size))}$'
+FILECLASS_REG_EXP=r'^{(\+[a-zA-Z_]{1,1000}\+):((size (=|<=|>=|<|>) \d{1,2}( (B|KB|MB|GB|TB))?( and )*)+(?!size))}$'
 
 KB_MULTIPLIER=1024
 MB_MULTIPLIER=1048576
@@ -96,6 +96,9 @@ def get_fileclass_definitions( fileclass_list ):
                      raise RuntimeError( "Found unknown unit type: " + next_item )
                   
                   next_item = None
+
+               elif len( next_item ) == 1 and next_item[0] == 'B':
+                  sql_size_definition += item
                
                else:
                   sql_size_definition += item
@@ -105,6 +108,9 @@ def get_fileclass_definitions( fileclass_list ):
                sql_size_definition += item
          
          elif len( item ) == 2 and item[1] == 'B':
+            continue
+
+         elif len( item ) == 1 and item[0] == 'B':
             continue
          
          else:
@@ -133,7 +139,7 @@ def update_database( cur, fileclass_def_dict ):
    for name in names:
       sql_update += 'WHEN ' + fileclass_def_dict[name] + " THEN '" + name + "'\n"
    
-   sql_update += 'ELSE fileclass\nEND\n'
+   sql_update += 'ELSE fileclass = \'+undefined+\'\nEND\n'
 # [END] - SQL CASE STATEMENT
    
 # [START] - SQL WHERE CLAUSE
@@ -172,12 +178,14 @@ def main():
    fileclass_def_dict = get_fileclass_definitions( args.fileclass_list )
    
    with closing( MySQLdb.connect( host=args.host, user=args.username, passwd=args.password, db=args.database ) ) as conn:
-      
+
       with closing( conn.cursor() ) as cur:
-         
+
          conn.autocommit( True )
-         
+
          update_database( cur, fileclass_def_dict )
+
+   update_database( None, fileclass_def_dict )
    
    logging.info( 'END' )
    
