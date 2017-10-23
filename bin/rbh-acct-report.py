@@ -46,7 +46,7 @@ from contextlib import closing
 from numbers import Number
 from decimal import Decimal
 
-from lib.disk_usage_info import lustre_ost_disk_usage_info_decimal_base
+from lib.disk_usage_info import lustre_ost_disk_usage_info_decimal_base_2
 
 
 
@@ -153,14 +153,14 @@ Subject: """ + subject + """
    return mail
 
 
-PB_DIVISIOR = Decimal( 1000000000000000.0 )
-TB_DIVISIOR = Decimal( 1000000000000.0 )
-GB_DIVISIOR = Decimal( 1000000000.0 )
-MB_DIVISIOR = Decimal( 1000000.0 )
-KB_DIVISIOR = Decimal( 1000.0 )
+PB_DIVISIOR = Decimal( 1125899906842624.0 )
+TB_DIVISIOR = Decimal( 1099511627776.0 )
+GB_DIVISIOR = Decimal( 1073741824.0 )
+MB_DIVISIOR = Decimal( 1048576.0 )
+KB_DIVISIOR = Decimal( 1024.0 )
 B_DIVISIOR  = Decimal( 1.0 )
 
-def format_number_to_byte_unit( number ):
+def format_number_to_base_2_byte_unit( number ):
    
    if not isinstance( number, Number ):
       raise TypeError( "Provided value is not a number: %s" % str( number ) )
@@ -170,27 +170,27 @@ def format_number_to_byte_unit( number ):
    if number >= PB_DIVISIOR:
       result = Decimal( number ) / PB_DIVISIOR
       result = round( result, 2 )
-      result = str( result ) + "PB"
+      result = str( result ) + "PiB"
    
    elif number >= TB_DIVISIOR:
       result = number / TB_DIVISIOR
       result = round( result, 2 )
-      result = str( result ) + "TB"
+      result = str( result ) + "TiB"
    
    elif number >= GB_DIVISIOR:
       result = number / GB_DIVISIOR
       result = round( result, 2 )
-      result = str( result ) + "GB"
+      result = str( result ) + "GiB"
    
    elif number >= MB_DIVISIOR:
       result = number / MB_DIVISIOR
       result = round( result, 2 )
-      result = str( result ) + "MB"
+      result = str( result ) + "MiB"
    
    elif number >= KB_DIVISIOR:
       result = number / KB_DIVISIOR
       result = round( result, 2 )
-      result = str( result ) + "KB"
+      result = str( result ) + "KiB"
    
    elif number >= B_DIVISIOR:
       result = number / B_DIVISIOR
@@ -298,12 +298,12 @@ def create_chart_pie( title, group_info_list, others_size, used_total_size, ost_
    
    for group_info in group_info_list:
       
-      label_text = group_info.gid + " (" + format_number_to_byte_unit( group_info.size ) + ")"
+      label_text = group_info.gid + " (" + format_number_to_base_2_byte_unit( group_info.size ) + ")"
       
       labels.append( label_text )
       sizes.append( group_info.size )
    
-   labels.append( "others (" + format_number_to_byte_unit( others_size ) + ")" )
+   labels.append( "others (" + format_number_to_base_2_byte_unit( others_size ) + ")" )
    sizes.append( others_size )
    
    creation_timestamp_text = "Timestamp: " + snapshot_timestamp
@@ -324,7 +324,7 @@ def create_chart_pie( title, group_info_list, others_size, used_total_size, ost_
    
    pct_used_total_size = int( ( used_total_size / ost_total_size ) * Decimal( 100 ) )
    
-   size_info = "Used " + format_number_to_byte_unit( used_total_size ) + " of " + format_number_to_byte_unit( ost_total_size ) + " Volume (" + str( pct_used_total_size ) + "%)"
+   size_info = "Used " + format_number_to_base_2_byte_unit( used_total_size ) + " of " + format_number_to_base_2_byte_unit( ost_total_size ) + " Volume (" + str( pct_used_total_size ) + "%)"
    
    ax.set_title( size_info, y = 1.125, fontsize = 14 )
    
@@ -406,9 +406,9 @@ def main():
    
    logging.debug( "Number of top group: %s" % num_top_groups )
    
-   ost_total_size = lustre_ost_disk_usage_info_decimal_base( '/lustre/nyx' )
-   
    try:
+      
+      ost_total_size = lustre_ost_disk_usage_info_decimal_base_2( '/lustre/nyx' )
       
       if not os.path.isdir( chart_save_dir ):
          raise RuntimeError( "Directory does not exist for saving charts: %s" % chart_save_dir )
@@ -436,7 +436,7 @@ def main():
       
       logging.debug( "Report date: %s" % snapshot_date )
       
-      title           = "Storage Usage of " + filesystem 
+      title           = "Storage Report of " + filesystem 
       used_total_size = 0
       others_size     = 0
       group_info_list = None
