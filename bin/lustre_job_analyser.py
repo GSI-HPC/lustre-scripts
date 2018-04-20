@@ -70,7 +70,10 @@ def init_arg_parser():
                         help='User for executing clush commands.')
 
     parser.add_argument('-s', '--oss-nodes', dest='oss_nodes', type=str, required=True,
-                        help='Specification of OSS in ClusterShell NodeSet Syntax.')
+                        help='Specification of OSS Nodes in ClusterShell NodeSet Syntax.')
+
+    parser.add_argument('-n', '--cmp-nodes', dest='cmp_nodes', type=str, required=True,
+                        help='Specification of Compute Nodes in ClusterShell NodeSet Syntax.')
 
     parser.add_argument('-m', '--min-samples', dest='min_samples', type=int, required=True,
                         help='Minimum number of samples.')
@@ -150,7 +153,7 @@ def main():
             logging.info("Jobstat item list is empty... Nothing to do!")
 
         elif len_jobstats_item_list == 1:
-            job_id_csv_list = jobstats_item_list[0].job_id
+            job_id_csv_list = str(jobstats_item_list[0].job_id)
 
         else:
 
@@ -162,7 +165,16 @@ def main():
         if job_id_csv_list == '':
             raise RuntimeError('job_id_csv_list should not be empty!')
 
-        # squeue --noheader - -sort 'u' - -format '%i|%T|%u|%g|%D|%N|%o' - j 44692654
+        squeue_call = "squeue --noheader --sort 'i' --format '%F|%A|%u|%g|%N|%o' -j " + job_id_csv_list
+
+        user_at_host = args.clush_user + '@' + args.cmp_nodes
+
+        squeue_output = subprocess.check_output(['ssh', user_at_host, squeue_call], stderr=subprocess.STDOUT)
+
+        squeue_result_list = squeue_output.lstrip().splitlines()
+
+        for squeue_item in squeue_result_list:
+            print(squeue_item)
 
         logging.debug('END')
 
