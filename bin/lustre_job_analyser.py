@@ -92,9 +92,7 @@ class OSSStatItem:
         self.write_samples = write_samples
 
     def to_string(self):
-
-        return ("oss_name:%s;read_samples:%s;write_samples:%s" %
-                (self.oss_name, self.read_samples, self.write_samples))
+        return ("%s:%s:%s" % (self.oss_name, self.read_samples, self.write_samples))
 
 
 class JobStatInfoItem:
@@ -241,32 +239,40 @@ class JobInfoItem:
         self.user = user
         self.group = group
         self.command = command
-        self.oss_stat_item_list = list()
+        self.oss_set = set()
         self.node_set = set()
 
     def to_string(self):
 
-        output_string = "job_id:" + str(self.job_id) + "|" \
-                        "user:" + self.user + "|" \
-                        "group:" + self.group + "|" \
-                        "command:" + self.command + "|"
-
-        output_string += "nodes:"
+        output_string = str(self.job_id) + "|" + \
+                        self.user + "|" + \
+                        self.group + "|" + \
+                        self.command + "|"
 
         # Since no indexed access is possible in a set, iterate over it with a counter evaluation...
-        node_counter = 1
+        item_counter = 1
 
         for node in self.node_set:
 
-            if node_counter == 1:
+            if item_counter == 1:
                 output_string += node
             else:
                 output_string += ";" + node
 
-            node_counter += 1
+            item_counter += 1
 
-        for oss_stat_item in self.oss_stat_item_list:
-            output_string += "|" + oss_stat_item.to_string()
+        output_string += '|'
+
+        item_counter = 1
+
+        for oss in self.oss_set:
+
+            if item_counter == 1:
+                output_string += oss
+            else:
+                output_string += ";" + oss
+
+            item_counter += 1
 
         return output_string
 
@@ -364,8 +370,7 @@ def main():
                     else:
                         job_info_item = job_info_item_dict[squeue_info_item.base_job_id]
 
-                    job_info_item.oss_stat_item_list.extend(job_stat_info_item.oss_stat_item_dict.values())
-
+                    job_info_item.oss_set = set(job_stat_info_item.oss_stat_item_dict.keys())
                     job_info_item.node_set.add(squeue_info_item.node)
 
                 else:
