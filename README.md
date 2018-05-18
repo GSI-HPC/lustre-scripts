@@ -12,7 +12,7 @@ __Requisites:__
 
 * ClusterShell - For executing remote commands in parallel from a workstation on the cluster.
 * Enabled Lustre job stats on the Lustre OSS.
-* show_high_jobstats.pl to collect and filter queried jobstats from Lustre OSS (https://www.scc.kit.edu/scc/sw/lustre_tools/show_high_jobstats.tgz).
+* show_high_jobstats.pl - Perl script to collect and filter queried jobstats from Lustre OSS (https://www.scc.kit.edu/scc/sw/lustre_tools/show_high_jobstats.tgz).
 * Slurm Queue command on remote client node
 
 __Script Parameter:__
