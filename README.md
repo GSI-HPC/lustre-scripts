@@ -29,7 +29,7 @@ __Script Parameter:__
 __Script Execution:__
 
 ```
-lustre_job_analyser.py -s file_server[000-100] -n client_node0200 -u admin_user -m 1000 -j lustre_jobstats_file.unl
+lustre_job_analyser.py -s file_server[000-100] -n client_node0200 -u admin_user -m 10000 -j lustre_jobstats_file.unl
 ```
 
 __Output Schema:__
