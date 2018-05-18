@@ -10,10 +10,10 @@ Produce an overview of the Slurm jobs that have a higher write or read sample co
 
 __Requisites:__
 
-* ClusterShell - For executing remote commands in parallel from a workstation on the cluster.
-* Enabled Lustre job stats on the Lustre OSS.
-* show_high_jobstats.pl - Perl script to collect and filter queried jobstats from Lustre OSS (https://www.scc.kit.edu/scc/sw/lustre_tools/show_high_jobstats.tgz).
-* Slurm Queue command on remote client node
+* Enabled Lustre job stats.
+* _ClusterShell_ - For executing remote commands in parallel from a workstation on the cluster.
+* _show_high_jobstats.pl_ - Perl script to collect and filter queried jobstats from Lustre OSS (https://www.scc.kit.edu/scc/sw/lustre_tools/show_high_jobstats.tgz).
+* _slurm-client_ - Squeue command to query Slurm information about jobs.
 
 __Script Parameter:__
 
