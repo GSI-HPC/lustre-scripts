@@ -18,13 +18,13 @@
 #
 
 
-import os.path
+import os
+import sys
 import logging
 import argparse
 import signal
 import time
 import datetime
-import sys
 
 
 DESCRIPTION="""Collects changelog indexes on the given MDT and writes the following information into an unload file (separated in columns):
@@ -146,59 +146,84 @@ def calc_values( prev_curr_index, prev_clog_index, current_index, clog_index ):
    return new_line
 
 
+def process_indexes( clog_users_file, clog_reader, previous_indexes ):
+
+   timestamp = get_current_timestamp()
+
+   indexes = read_indexes(clog_users_file, clog_reader)
+
+   return ( timestamp + DELIMITER + calc_values(previous_indexes[CURR_IDX_POS], previous_indexes[CLOG_IDX_POS], indexes[CURR_IDX_POS], indexes[CLOG_IDX_POS]), indexes )
+
+
 def main():
 
-   logging.basicConfig( level=logging.DEBUG, format='%(asctime)s - %(levelname)s: %(message)s' )
+   try:
 
-   logging.info( 'START' )
+      logging.basicConfig( level=logging.DEBUG, format='%(asctime)s - %(levelname)s: %(message)s' )
 
-   parser = argparse.ArgumentParser( description=DESCRIPTION )
+      logging.info( 'START' )
 
-   parser.add_argument( '-i', '--interval',         dest='interval',         type=int,  required=False, help="Specifies the collect interval in seconds (default: " + str( INTERVAL_SECONDS ) + " seconds).",    default=INTERVAL_SECONDS )
-   parser.add_argument( '-d', '--delimiter',        dest='delimiter',        type=str,  required=False, help="Defines the delimiter for unloaded indexes (default: " + DELIMITER + ").",                         default=DELIMITER )
-   parser.add_argument( '-m', '--mdt-name',         dest='mdt_name',         type=str,  required=True,  help='Specifies the MDT name where to read the current index from (e.g. \'fs-MDT0000\').' )
-   parser.add_argument( '-r', '--changelog-reader', dest='changelog_reader', type=str,  required=False, help='Specifies an additional changelog reader to read the index from (optional - e.g. \'cl1\').',       default=None )
-   parser.add_argument( '-f', '--unload-file',      dest='unload_file',      type=str,  required=False, help="Specifies the unload file where the collected information is saved (" + str( UNLOAD_FILE ) + ").", default=UNLOAD_FILE )
-   parser.add_argument( '--direct-flush',           dest='direct_flush',                required=False, help="If enabled after each collection interval a disk write flush is done of the collected values.",    default=False, action='store_true' )
-   args = parser.parse_args()
-   
-   clog_users_file = "/proc/fs/lustre/mdd/" + args.mdt_name + "/changelog_users"
-   
-   clog_reader = args.changelog_reader
-   
-   validate( clog_users_file, args.interval )
-   
-   signal.signal( signal.SIGINT, signal_handler )
+      parser = argparse.ArgumentParser( description=DESCRIPTION )
 
-   global run_cond
-   
-   # Initial Run.
-   previous_indexes = read_indexes( clog_users_file, clog_reader )
-   time.sleep( args.interval )
-   
-   with open( args.unload_file, 'a' ) as outfile:
-   
-      # Continuous Run.
-      while( run_cond ):
-      
-         timestamp = get_current_timestamp()
-         
-         indexes = read_indexes( clog_users_file, clog_reader )
-         
-         fmt_value_str = timestamp + DELIMITER + calc_values( previous_indexes[ CURR_IDX_POS ], previous_indexes[ CLOG_IDX_POS ], indexes[ CURR_IDX_POS ], indexes[ CLOG_IDX_POS ] )
-         
-         outfile.write( fmt_value_str + '\n' )
-         
-         if args.direct_flush:
-            outfile.flush()
-         
-         previous_indexes = indexes
-         
-         time.sleep( args.interval )
-   
-   logging.info( 'END' )
-   
-   return 0
+      parser.add_argument( '-i', '--interval',         dest='interval',         type=int,  required=False, help="Specifies the collect interval in seconds (default: " + str( INTERVAL_SECONDS ) + " seconds).",                 default=INTERVAL_SECONDS )
+      parser.add_argument( '-d', '--delimiter',        dest='delimiter',        type=str,  required=False, help="Defines the delimiter for unloaded indexes (default: " + DELIMITER + ").",                                      default=DELIMITER )
+      parser.add_argument( '-m', '--mdt-name',         dest='mdt_name',         type=str,  required=True,  help='Specifies the MDT name where to read the current index from (e.g. \'fs-MDT0000\').' )
+      parser.add_argument( '-r', '--changelog-reader', dest='changelog_reader', type=str,  required=False, help='Specifies an additional changelog reader to read the index from (optional - e.g. \'cl1\').',                    default=None )
+      parser.add_argument( '-f', '--unload-file',      dest='unload_file',      type=str,  required=False, help="Specifies the unload file where the collected information is saved (" + str( UNLOAD_FILE ) + ").",              default=UNLOAD_FILE )
+      parser.add_argument( '--direct-flush',           dest='direct_flush',                required=False, help="If enabled after each collection interval a disk write flush is done of the collected values.",                 default=False, action='store_true' )
+      parser.add_argument( '--capture-delta',          dest='capture_delta',               required=False, help="Prints the delta between the changelog consumer and the MDT index after one interval on the stdout and quits.", default=False, action='store_true')
+
+      args = parser.parse_args()
+
+      clog_users_file = "/proc/fs/lustre/mdd/" + args.mdt_name + "/changelog_users"
+
+      clog_reader = args.changelog_reader
+
+      validate( clog_users_file, args.interval )
+
+      signal.signal( signal.SIGINT, signal_handler )
+
+      global run_cond
+
+      # Initial Run.
+      previous_indexes = read_indexes( clog_users_file, clog_reader )
+      time.sleep( args.interval )
+
+      if args.capture_delta:
+
+         fmt_value_str, indexes = process_indexes(clog_users_file, clog_reader, previous_indexes)
+
+         print(int(fmt_value_str.split(DELIMITER)[3]))
+
+         os._exit(0)
+
+      with open( args.unload_file, 'a' ) as outfile:
+
+         while( run_cond ):
+
+            fmt_value_str, indexes = process_indexes( clog_users_file, clog_reader, previous_indexes )
+
+            outfile.write( fmt_value_str + '\n' )
+
+            if args.direct_flush:
+               outfile.flush()
+
+            previous_indexes = indexes
+
+            time.sleep( args.interval )
+
+      logging.info( 'END' )
+
+      os._exit(0)
+
+   except Exception as e:
+
+      exc_type, exc_obj, exc_tb = sys.exc_info()
+      filename = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+
+      sys.stderr.write("Exception occurred: %s - %s (line: %s)\n" % (str(e), filename, exc_tb.tb_lineno))
+
+      os._exit(1)
 
 
 if __name__ == '__main__':
