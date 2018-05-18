@@ -23,13 +23,13 @@ __Script Parameter:__
 * -s/--oss-nodes: Specification of OSS nodes by using ClusterShell NodeSet syntax.
 * -n/--client-node: Specification of Client Node.
 * -m/--min-samples: Minimum number of read or write Lustre jobstats sample count.
-* -C/--create-jobstats-file: Specifies if a new Lustre jobstats file should be created.
 * -j/--path-jobstats-file: Specifies path to save Lustre jobstats file.
+* -C/--create-jobstats-file: Specifies if a new Lustre jobstats file should be created.
 
 __Script Execution:__
 
 ```
-lustre_job_analyser.py -s file_server[000-100] -n client_node0200 -u admin_user -m 10000 -j lustre_jobstats_file.unl
+lustre_job_analyser.py -s file_server[000-100] -n client_node0200 -u admin_user -m 10000 -j lustre_jobstats_file.unl -C
 ```
 
 __Output Schema:__
