@@ -5,7 +5,7 @@ Useful scripts for the Lustre file system (http://lustre.org/) and the Robinhood
 
 __Description:__
 
-Produce an overview of the SLurm jobs that have a higher write or read sample count based on the Lustre job statistics regarding specfied file server.
+Produce an overview of the Slurm jobs that have a higher write or read sample count based on the Lustre job statistics regarding specfied file server (OSS).
 
 __Requisites:__
 
@@ -15,8 +15,13 @@ __Requisites:__
 
 __Script Parameter:__
 
-* -D: Enable Debug Messages
-* -u: User for executing remote commands e.g. querying Lustre job statitics or squeue information from Slurm.
+* -D/--enable-debug: Enables debug log messages.
+* -u/--user: User for executing remote commands e.g. querying Lustre job statitics or squeue information from Slurm.
+* -s/--oss-nodes: Specification of OSS nodes by using ClusterShell NodeSet syntax.
+* -n/--client-node: Specification of Client Node.
+* -m/--min-samples: Minimum number of read or write Lustre jobstats sample count.
+* -C/--create-jobstats-file: Specifies if a new Lustre jobstats file should be created.
+* -j/--path-jobstats-file: Specifies path to save Lustre jobstats file.
 
 __Script Execution:__
 
