@@ -32,7 +32,7 @@ def create_job_stats_file(args):
         jobstats_call = "lctl get_param *.*.job_stats | show_high_jobstats.pl -o " + str(args.min_samples)
 
         # TODO: Use clush API to detect errors and getting the output.
-        jobstats_output = subprocess.check_output(['clush', '-l', args.clush_user, '-w', args.oss_nodes, jobstats_call],
+        jobstats_output = subprocess.check_output(['clush', '-l', args.user, '-w', args.oss_nodes, jobstats_call],
                                                   stderr=subprocess.STDOUT)
 
         jobstats_output_lines = jobstats_output.splitlines()
@@ -224,7 +224,7 @@ def create_squeue_info_list(args, job_id_list):
 
         logging.debug(squeue_call)
 
-        user_at_host = args.clush_user + '@' + args.cmp_node
+        user_at_host = args.user + '@' + args.client_node
 
         squeue_output = subprocess.check_output(['ssh', user_at_host, squeue_call], stderr=subprocess.STDOUT)
 
@@ -284,23 +284,23 @@ def init_arg_parser():
     parser.add_argument('-D', '--enable-debug', dest='enable_debug', required=False, action='store_true',
                         help='Enables debug log messages.')
 
-    parser.add_argument('-u', '--clush-user', dest='clush_user', type=str, required=True,
-                        help='User for executing clush commands.')
+    parser.add_argument('-u', '--user', dest='user', type=str, required=True,
+                        help='User for executing remote commands.')
 
     parser.add_argument('-s', '--oss-nodes', dest='oss_nodes', type=str, required=True,
                         help='Specification of OSS nodes by using ClusterShell NodeSet syntax.')
 
-    parser.add_argument('-n', '--cmp-node', dest='cmp_node', type=str, required=True,
-                        help='Specification of Compute Node.')
+    parser.add_argument('-n', '--client-node', dest='client_node', type=str, required=True,
+                        help='Specification of Client Node.')
 
     parser.add_argument('-m', '--min-samples', dest='min_samples', type=int, required=True,
-                        help='Minimum number of samples.')
-
-    parser.add_argument('-C', '--create-jobstat-file', dest='create_jobstats_file', required=False, action='store_true',
-                        help='Specifies if a new Lustre jobstats file should be created.')
+                        help='Minimum number of read or write Lustre jobstats sample count.')
 
     parser.add_argument('-j', '--path-jobstat-file', dest='path_jobstats_file', type=str, required=True,
                         help='Specifies path to save Lustre jobstats file.')
+
+    parser.add_argument('-C', '--create-jobstats-file', dest='create_jobstats_file', required=False, action='store_true',
+                        help='Specifies if a new Lustre jobstats file should be created.')
 
     return parser.parse_args()
 
