@@ -8,6 +8,6 @@ Useful scripts for the Lustre file system (http://lustre.org/) and the Robinhood
 ```
 lustre_job_analyser.py -s file_server[000-100] -n client_node0200 -u admin_user -m 1000 -j lustre_jobstats_file.unl
 ```
-Output:
+__Output:__
 
-SLURM_JOB_ID|USER|GROUP|EXECUTABLE_PATH|CLIENT_NODE_LIST|FILE_SERVER_LIST
+SLURM_JOB_ID|USER|GROUP|EXECUTABLE|CLIENT_NODE_LIST|FILE_SERVER_LIST
