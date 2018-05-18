@@ -37,3 +37,45 @@ __Output Schema:__
 SLURM_JOB_ID|USER|GROUP|EXECUTABLE|CLIENT_NODE_LIST|FILE_SERVER_LIST  
 ...  
 SLURM_JOB_ID|USER|GROUP|EXECUTABLE|CLIENT_NODE_LIST|FILE_SERVER_LIST  
+
+## Lustre Collect Changelog Indexes
+
+__Description:__
+
+This script collects changelog indexes from a Lustre MDT.  
+It can be executed continuously or just in a capture mode.  
+
+for displaying the delta between the Lustre changelog index and the specified changelog reader index.
+
+__Script Parameter:__
+
+* -i/--interval: Specifies the collect interval in seconds.
+* -d/--delimiter: Defines the delimiter for unloaded indexes.
+* -m/--mdt-name: Specifies the MDT name where to read the current index from.
+* -r/--changelog-reader: Specifies an additional changelog reader to read the index from.
+* -f/--unload-file: Specifies the unload file where the collected information is saved (changelog_indexes.unl).
+* --direct-flush: If enabled after each collection interval a disk write flush is done of the collected values.
+* --capture-delta: Prints the delta between the changelog consumer and the MDT index after one interval on the stdout and quits.
+
+__Script Execution:__
+
+Continuous Collect Mode:
+```
+lustre_collect_changelog_indexes.py -m fs-MDT0000 -r cl1
+```
+
+Capture Delta Mode:
+```
+lustre_collect_changelog_indexes.py -m fs-MDT0000 -r cl1 --capture-delta
+```
+
+__Output Schema:__
+
+In Continuous Collect Mode:  
+* TIMESTAMP;
+* MDT CHANGELOG INDEX PRODUCER COUNT;
+* CHANGELOG READER INDEX CONSUMER COUNT;
+* DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
+
+In Capture Delta Mode:  
+DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
