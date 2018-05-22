@@ -34,6 +34,8 @@ DESCRIPTION="""Collects changelog indexes on the given MDT and writes the follow
 4) The delta between the current index and the changelog reader index.
 """
 
+VERSION='1.0'
+
 DELIMITER=';'
 INTERVAL_SECONDS=300
 UNLOAD_FILE='changelog_indexes.unl'
@@ -69,32 +71,35 @@ def get_current_timestamp():
 
 
 def read_indexes( clog_users_file, clog_reader ):
+
+   if not clog_reader:
+      raise RuntimeError('No changelog reader is specified!')
    
    current_index = None
    clog_index    = None
 
    with open( clog_users_file ) as clog_file:
-   
+
       for line in clog_file:
          
          if "current index:" in line:
-            
+
             current_index = line.split( ':' )[ 1 ].strip()
             
             if not current_index.isdigit():
                raise ValueError( "Retrieved current index is not a number: " + current_index )
-            
-         if not clog_reader:
-            break
          
-         if clog_reader and clog_reader in line:
+         if clog_reader in line:
             clog_index = line.split( clog_reader )[ 1 ].strip()
+
+         if current_index and clog_index:
+            break
    
-   if current_index == None:
-      raise RuntimeError( 'The current index is not set!' )
+   if not current_index:
+      raise RuntimeError( 'No current index has been set!' )
          
-   if clog_reader and clog_index is None:
-      raise RuntimeError( "No index set for the changelog reader: " + clog_reader )
+   if not clog_index:
+      raise RuntimeError( "No index has been set for the changelog reader: " + clog_reader )
    
    return tuple( ( current_index, clog_index ) )
 
@@ -161,19 +166,29 @@ def main():
 
       logging.basicConfig( level=logging.DEBUG, format='%(asctime)s - %(levelname)s: %(message)s' )
 
-      logging.info( 'START' )
-
       parser = argparse.ArgumentParser( description=DESCRIPTION )
 
-      parser.add_argument( '-i', '--interval',         dest='interval',         type=int,  required=False, help="Specifies the collect interval in seconds (default: " + str( INTERVAL_SECONDS ) + " seconds).",                 default=INTERVAL_SECONDS )
-      parser.add_argument( '-d', '--delimiter',        dest='delimiter',        type=str,  required=False, help="Defines the delimiter for unloaded indexes (default: " + DELIMITER + ").",                                      default=DELIMITER )
-      parser.add_argument( '-m', '--mdt-name',         dest='mdt_name',         type=str,  required=True,  help='Specifies the MDT name where to read the current index from (e.g. \'fs-MDT0000\').' )
-      parser.add_argument( '-r', '--changelog-reader', dest='changelog_reader', type=str,  required=False, help='Specifies an additional changelog reader to read the index from (optional - e.g. \'cl1\').',                    default=None )
-      parser.add_argument( '-f', '--unload-file',      dest='unload_file',      type=str,  required=False, help="Specifies the unload file where the collected information is saved (" + str( UNLOAD_FILE ) + ").",              default=UNLOAD_FILE )
-      parser.add_argument( '--direct-flush',           dest='direct_flush',                required=False, help="If enabled after each collection interval a disk write flush is done of the collected values.",                 default=False, action='store_true' )
-      parser.add_argument( '--capture-delta',          dest='capture_delta',               required=False, help="Prints the delta between the changelog consumer and the MDT index after one interval on the stdout and quits.", default=False, action='store_true')
+      parser.add_argument( '-i', '--interval',         dest='interval',         type=int,  help="Specifies the collect interval in seconds (default: " + str( INTERVAL_SECONDS ) + " seconds).",                 default=INTERVAL_SECONDS )
+      parser.add_argument( '-d', '--delimiter',        dest='delimiter',        type=str,  help="Defines the delimiter for unloaded indexes (default: " + DELIMITER + ").",                                      default=DELIMITER )
+      parser.add_argument( '-m', '--mdt-name',         dest='mdt_name',         type=str,  help='Specifies the MDT name where to read the current index from (e.g. \'fs-MDT0000\').' )
+      parser.add_argument( '-r', '--changelog-reader', dest='changelog_reader', type=str,  help='Specifies an additional changelog reader to read the index from (optional - e.g. \'cl1\').',                    default=None )
+      parser.add_argument( '-f', '--unload-file',      dest='unload_file',      type=str,  help="Specifies the unload file where the collected information is saved (" + str( UNLOAD_FILE ) + ").",              default=UNLOAD_FILE )
+      parser.add_argument( '--direct-flush',           dest='direct_flush',                help="If enabled after each collection interval a disk write flush is done of the collected values.",                 default=False, action='store_true' )
+      parser.add_argument( '--capture-delta',          dest='capture_delta',               help="Prints the delta between the changelog consumer and the MDT index after one interval on the stdout and quits.", default=False, action='store_true' )
+      parser.add_argument( '-v', '--version',                                              help="Prints the version of the script.",                                                                             default=False, action='store_true' )
 
       args = parser.parse_args()
+
+      if args.version:
+
+         print( "Version: %s" % VERSION )
+
+         os._exit(0)
+
+      logging.info('START')
+
+      if not args.mdt_name:
+         raise RuntimeError('No MDT name was specified!')
 
       clog_users_file = "/proc/fs/lustre/mdd/" + args.mdt_name + "/changelog_users"
 
@@ -191,7 +206,9 @@ def main():
 
       if args.capture_delta:
 
-         fmt_value_str, indexes = process_indexes(clog_users_file, clog_reader, previous_indexes)
+         fmt_value_str, indexes = process_indexes( clog_users_file, clog_reader, previous_indexes )
+
+         print( fmt_value_str )
 
          print(int(fmt_value_str.split(DELIMITER)[3]))
 
