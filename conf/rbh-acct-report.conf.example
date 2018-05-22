@@ -1,13 +1,28 @@
 [mysqld]
-host          = 
-user          = 
-password      = 
+host                    =
+user                    =
+password                =
+
+[robinhood]
+database                = robinhood_fs
+acct_stat_table         = ACCT_STAT
 
 [history]
-database                = 
-acct_stat_history_table = 
+database                = report_fs
+acct_stat_history_table = ACCT_STAT_HISTORY
+
+[chart]
+num_top_groups           = 8
+save_dir                 = /home/data/chart
+
+[chart_pie]
+filename                  = storage_usage_lustre_fs
+filetype                  = svg
 
 [mail]
-server    = 
-sender    = 
-recipient = 
+server                    =
+sender                    =
+recipient_list            =
+
+[storage]
+filesystem = /lustre/fs
