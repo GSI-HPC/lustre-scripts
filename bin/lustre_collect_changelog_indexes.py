@@ -157,7 +157,7 @@ def process_indexes( clog_users_file, clog_reader, previous_indexes ):
 
    indexes = read_indexes(clog_users_file, clog_reader)
 
-   return ( timestamp + DELIMITER + calc_values(previous_indexes[CURR_IDX_POS], previous_indexes[CLOG_IDX_POS], indexes[CURR_IDX_POS], indexes[CLOG_IDX_POS]), indexes )
+   return timestamp + DELIMITER + calc_values(previous_indexes[CURR_IDX_POS], previous_indexes[CLOG_IDX_POS], indexes[CURR_IDX_POS], indexes[CLOG_IDX_POS])
 
 
 def init_logging( enable_debug ):
@@ -218,9 +218,7 @@ def main():
 
       if args.capture_delta:
 
-         fmt_value_str, indexes = process_indexes( clog_users_file, clog_reader, previous_indexes )
-
-         print( fmt_value_str )
+         fmt_value_str = process_indexes( clog_users_file, clog_reader, previous_indexes )
 
          print(int(fmt_value_str.split(DELIMITER)[3]))
 
