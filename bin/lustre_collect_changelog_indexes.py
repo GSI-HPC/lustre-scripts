@@ -160,11 +160,19 @@ def process_indexes( clog_users_file, clog_reader, previous_indexes ):
    return ( timestamp + DELIMITER + calc_values(previous_indexes[CURR_IDX_POS], previous_indexes[CLOG_IDX_POS], indexes[CURR_IDX_POS], indexes[CLOG_IDX_POS]), indexes )
 
 
+def init_logging( enable_debug ):
+
+    if enable_debug:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
+    logging.basicConfig( level=log_level, format="%(asctime)s - %(levelname)s: %(message)s" )
+
+
 def main():
 
    try:
-
-      logging.basicConfig( level=logging.DEBUG, format='%(asctime)s - %(levelname)s: %(message)s' )
 
       parser = argparse.ArgumentParser( description=DESCRIPTION )
 
@@ -176,6 +184,8 @@ def main():
       parser.add_argument( '--direct-flush',           dest='direct_flush',                help="If enabled after each collection interval a disk write flush is done of the collected values.",                 default=False, action='store_true' )
       parser.add_argument( '--capture-delta',          dest='capture_delta',               help="Prints the delta between the changelog consumer and the MDT index after one interval on the stdout and quits.", default=False, action='store_true' )
       parser.add_argument( '-v', '--version',                                              help="Prints the version of the script.",                                                                             default=False, action='store_true' )
+      parser.add_argument('-D', '--enable-debug',      dest='enable_debug',                help='Enables logging of debug messages.',                                                                                           action='store_true' )
+
 
       args = parser.parse_args()
 
@@ -185,7 +195,9 @@ def main():
 
          os._exit(0)
 
-      logging.info('START')
+      init_logging( args.enable_debug )
+
+      logging.debug('START')
 
       if not args.mdt_name:
          raise RuntimeError('No MDT name was specified!')
@@ -229,7 +241,7 @@ def main():
 
             time.sleep( args.interval )
 
-      logging.info( 'END' )
+      logging.debug( 'END' )
 
       os._exit(0)
 
