@@ -27,14 +27,17 @@ import time
 import datetime
 
 
+# CHANGELOG HISTORY
+# Version 1.0: Release version
+
+VERSION='1.0'
+
 DESCRIPTION="""Collects changelog indexes on the given MDT and writes the following information into an unload file (separated in columns):
 1) Timestamp of calculation.
 2) Increase of the current index on the MDT.
 3) Consumption number of the given changelog reader.
 4) The delta between the current index and the changelog reader index.
 """
-
-VERSION='1.0'
 
 DELIMITER=';'
 INTERVAL_SECONDS=300
@@ -220,7 +223,8 @@ def main():
 
          fmt_value_str = process_indexes( clog_users_file, clog_reader, previous_indexes )
 
-         print(int(fmt_value_str.split(DELIMITER)[3]))
+         sys.stdout.write(fmt_value_str.split(DELIMITER)[3])
+         sys.stdout.flush()
 
          os._exit(0)
 
