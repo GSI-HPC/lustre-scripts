@@ -79,3 +79,18 @@ In Continuous Collect Mode:
 
 In Capture Delta Mode:  
 DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
+
+
+## Lustre Storage Report
+
+__Description:__
+
+
+
+__Script Parameter:__
+
+
+__Script Execution:__
+
+
+__Output Schema:__
