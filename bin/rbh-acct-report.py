@@ -408,7 +408,7 @@ def main():
    
    try:
       
-      ost_total_size = lustre_ost_disk_usage_info_decimal_base_2( '/lustre/nyx' )
+      ost_total_size = lustre_ost_disk_usage_info_decimal_base_2( filesystem )
       
       if not os.path.isdir( chart_save_dir ):
          raise RuntimeError( "Directory does not exist for saving charts: %s" % chart_save_dir )
