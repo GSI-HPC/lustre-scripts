@@ -316,7 +316,7 @@ def create_chart_pie( title, group_info_list, others_size, used_total_size, ost_
    cs_range = float( len( sizes ) ) * 1.1
    colors = cm.Set1( plt.np.arange( cs_range ) / cs_range )
    
-   patches, texts, autotexts = ax.pie( sizes, labels = labels, colors = colors, autopct = '%1.2f%%', pctdistance = 0.6, shadow = False, startangle = 90 )
+   patches, texts, autotexts = ax.pie( sizes, labels = labels, colors = colors, autopct = '%1.2f%%', pctdistance = .8, shadow = False, startangle = 90 )
    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
    
    for autotext_item in autotexts:
