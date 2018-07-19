@@ -85,14 +85,34 @@ DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
 
 __Description:__
 
+Storage information is derived from the Robinhood accouting database table instead expensively accessing the Lustre filesystem. Beyond that the gathered information is stored in a separate accounting history table for further data analysis.
+
 The Lustre Storage Report consists of two separate Python programms:
 
-1. rbh-acct-stat-history.py - Takes daily snapshot of aggregated storage consumption per user out of Robinhood's  accounting database table.
+1. rbh-acct-stat-history.py - Takes daily snapshot of aggregated storage consumption per user.
 1. rbh-acct-report.py - Creates a chart pie with top n groups which can be sent per mail.
+
+### rbh-acct-stat-history.py
 
 __Requisites:__
 
-* Robinhood Policy Engine
+python-mysqldb - Python interface to MySQL
+
+__Script Parameter:__
+
+
+
+__Script Execution:__
+
+
+__Output Schema:__
+
+
+### rbh-acct-report.py
+
+
+__Requisites:__
+
 * python-mysqldb - Python interface to MySQL
 * python-matplotlib - Python based plotting system in a style similar to Matlab
 
