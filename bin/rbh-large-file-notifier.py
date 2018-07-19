@@ -269,7 +269,7 @@ def main():
                
                for entry_info in entry_info_map[ uid ]:
                   
-                  # TODO Get a list for each user instead... 
+                  # TODO: Get a list for each user instead...
                   notify_item = notifier_table_handler.get_notify_item( entry_info.fid )
                
                   if notify_item:
@@ -278,7 +278,8 @@ def main():
                         continue
                      
                      last_notify_check = notify_item.last_notify
-                     
+
+                     # TODO: Remove check on Zero-Datetime and test is on MySQL 5!
                      if last_notify_check == None or str( last_notify_check ) == '0000-00-00 00:00:00':
                         last_notify_check = datetime.datetime( 1970, 1, 1, 00, 00, 00 )
                      
@@ -286,21 +287,21 @@ def main():
                      
                      if last_notify_threshold < datetime.datetime.fromtimestamp( time.time() ):
                         
-                        notify_info = NotifyInfo( entry_info.fid, entry_info.uid, entry_info.size, entry_info.path, check_timestamp, str( notify_item.last_notify ) )
+                        notify_info = NotifyInfo( entry_info.fid, entry_info.uid, entry_info.size, entry_info.path, check_timestamp, notify_item.last_notify )
                         
                         update_notify_info_list.append( notify_info )
                         
                         user_report_buf.write( notify_info.export_compact_to_csv() )
                      
                      notifier_table_handler.update_notify_item_on_last_check( notify_item, entry_info, check_timestamp )
-                  
+
                   else:
                      
-                     notify_info = NotifyInfo( entry_info.fid, entry_info.uid, entry_info.size, entry_info.path, check_timestamp )
+                     new_notify_info = NotifyInfo( entry_info.fid, entry_info.uid, entry_info.size, entry_info.path, check_timestamp, None )
                      
-                     new_notify_info_list.append( notify_info )
+                     new_notify_info_list.append( new_notify_info )
                      
-                     user_report_buf.write( notify_info.export_compact_to_csv() )
+                     user_report_buf.write( new_notify_info.export_compact_to_csv() )
                
                large_file_list = user_report_buf.getvalue()
                

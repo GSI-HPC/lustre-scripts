@@ -28,7 +28,7 @@ def convert_number_human_readable( number ):
 
 class NotifyInfo:
    
-   def __init__( self, fid, uid, size, path, last_check, last_notify = '0000-00-00 00:00:00', ignore_notify = 'FALSE' ):
+   def __init__( self, fid, uid, size, path, last_check, last_notify ):
          
          self.fid           = fid
          self.uid           = uid
@@ -36,13 +36,24 @@ class NotifyInfo:
          self.path          = path
          self.last_check    = last_check
          self.last_notify   = last_notify
-         self.ignore_notify = ignore_notify
-   
-   
+         self.ignore_notify = 'FALSE'
+
+   def to_sql_values(self):
+
+      sql_values = self.fid + "', '" + self.uid + "', " + str( self.size ) + ", '" + self.path + "', '" + self.last_check + "', "
+
+      if self.last_notify is None:
+         sql_values += 'NULL'
+      else:
+         sql_values += "'" + self.last_notify + "'"
+
+      sql_values += ", '" + self.ignore_notify + "'"
+
+      return sql_values
+
    def export_compact_to_csv( self ):
       return convert_number_human_readable( self.size ) + ";" + self.path + "\n"
-   
-   
+
    def export_full_to_csv( self ):      
       return self.uid + ";" + convert_number_human_readable( self.size ) + ";" + self.path + ";" + self.last_notify + "\n"
 
@@ -58,7 +69,6 @@ class NotifierTableHandler:
       
       self.new_notify_queue    = list()
       self.update_notify_queue = list()
-   
    
    def create_notifier_table( self ):
       
@@ -82,8 +92,7 @@ PRIMARY KEY (fid)
       
       self.cur.execute( sql )
       self.logger.debug( "Created table:\n" + sql )
-   
-   
+
    def is_table_empty( self ):
       
       sql = "SELECT 1 FROM " + self.db + "." + self.table + " LIMIT 1;"
@@ -95,16 +104,14 @@ PRIMARY KEY (fid)
          return False
       else:
          return True
-   
-   
+
    def truncate_table( self ):
    
       sql = "TRUNCATE " + self.db + "." + self.table
       
       self.cur.execute( sql )
       self.logger.debug( sql )
-   
-   
+
    def get_notify_item( self, fid ):
       
       sql = "SELECT fid, uid, size, path, last_check, last_notify, ignore_notify FROM " + self.db + "." + self.table + " WHERE fid = '" + fid + "'"
@@ -118,23 +125,21 @@ PRIMARY KEY (fid)
          return NotifyInfo( result[ 0 ], result[ 1 ], result[ 2 ], result[ 3 ], result[ 4 ], result[ 5 ], result[ 6 ] )
       
       return None
-   
-   
+
    def insert_new_notify_info_list( self, new_notify_info_list ):
       
       sql = "INSERT INTO " + self.db + "." + self.table + " VALUES "
       
-      sql += "('" + new_notify_info_list[ 0 ].fid + "', '" + new_notify_info_list[ 0 ].uid + "', " + str( new_notify_info_list[ 0 ].size ) + ", '" + new_notify_info_list[ 0 ].path + "', '" + new_notify_info_list[ 0 ].last_check + "', '" + new_notify_info_list[ 0 ].last_notify + "', '" + new_notify_info_list[ 0 ].ignore_notify + "')"
+      sql += "('" + new_notify_info_list[ 0 ].to_sql_values() + ")"
       
       if len( new_notify_info_list ) > 1:
          
          for notify_info in new_notify_info_list[ 1: ]:
-            sql += ", ('" + notify_info.fid + "', '" + notify_info.uid + "', " + str( notify_info.size ) + ", '" + notify_info.path + "', '" + notify_info.last_check + "', '" + notify_info.last_notify + "', '" + notify_info.ignore_notify + "')"
+            sql += ", ('" + notify_info.to_sql_values() + "')"
       
       self.logger.debug( sql )
       self.cur.execute( sql )
-   
-   
+
    def update_last_notify( self, update_notify_info_list, last_notify ):
       
       sql = "UPDATE " + self.db + "." + self.table + " SET last_notify = '" + last_notify + "' WHERE fid IN ('" + update_notify_info_list[ 0 ].fid + "'"
@@ -149,7 +154,6 @@ PRIMARY KEY (fid)
       self.logger.debug( sql )
       self.cur.execute( sql )
 
-   
    def update_notify_item_on_last_check( self, notify_item, entry_info, check_timestamp ):
    
       sql_update_where_list = list()
@@ -174,8 +178,7 @@ PRIMARY KEY (fid)
       
       self.logger.debug( sql )
       self.cur.execute( sql )
-   
-   
+
    def purge_old_table_entries( self, check_timestamp ):
       
       sql = "DELETE FROM " + self.db + "." + self.table + " WHERE last_check < '" + check_timestamp + "'"
