@@ -103,7 +103,7 @@ __Script Parameter:__
 
 * -f/--config-file: Path of the config file.
 * -D/-enable-debug: Enables logging of debug messages.
-* --create-table: If set the notifiers table is created.
+* --create-table: If set the accounting history table is created.
 
 __Structure of the Configuration File:__
 
@@ -215,3 +215,77 @@ __Output Schema:__
 Generated pie chart with n top groups based on a date from the accounting history table:
 
 ![Example Storage Report](images/example_storage_report_lustre_nyx.svg)
+
+## Lustre Large File Notifier
+
+__Description:__
+
+This program queries the Robinhood Entries database table for large files and keeps track of that files in separate notification table. Based on the notification table user can be notified of large files saved on the Lustre file system and/or an overview of large files can be send to administrators of the file system.
+
+__Requisites:__
+
+python-mysqldb - Python interface to MySQL
+LDAP service running for determining users email adress on user notification.
+
+__Script Parameter:__
+
+* -f/--config-file: Path of the config file.
+* -D/-enable-debug: Enables logging of debug messages.
+* --create-table: If set the notifiers table is created.
+* --no-mail: Disables mail send.
+
+__Structure of the Configuration File:__
+
+```
+[mysqld]
+host         =
+database     =
+user         =
+password     =
+
+[check]
+file_size            = 500GB
+file_system          =
+check_interval_days  = 7
+
+[notify]
+table    = NOTIFIES
+database =
+
+[mail]
+server             =
+sender             =
+overview_recipient =
+subject            = Large File Report
+send_user_mail     = off
+
+[ldap]
+server =
+dc     =
+```
+
+__Script Execution:__
+
+Executing the rbh-large-file-notifier with debug messages saved into a proper log file:
+
+```
+./rbh-large-file-notifier.py -f rbh-large-file-notifier.conf -D >> rbh-large-file-notifier.log 2>&1
+```
+
+__Schema of the Notifier Table:__
+
+```
++---------------+----------------------+------+-----+---------+-------+
+| Field         | Type                 | Null | Key | Default | Extra |
++---------------+----------------------+------+-----+---------+-------+
+| fid           | varbinary(64)        | NO   | PRI | NULL    |       |
+| uid           | varbinary(127)       | NO   |     | NULL    |       |
+| size          | bigint(20)           | NO   |     | NULL    |       |
+| path          | varchar(1000)        | NO   |     | NULL    |       |
+| last_check    | datetime             | NO   |     | NULL    |       |
+| last_notify   | datetime             | YES  |     | NULL    |       |
+| ignore_notify | enum('FALSE','TRUE') | YES  |     | FALSE   |       |
++---------------+----------------------+------+-----+---------+-------+
+7 rows in set (0.00 sec)
+
+```
