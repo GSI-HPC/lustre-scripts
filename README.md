@@ -85,14 +85,16 @@ DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
 
 __Description:__
 
-Storage information is derived from the Robinhood accouting database table instead expensively accessing the Lustre filesystem. Beyond that the gathered information is stored in a separate accounting history table for further data analysis.
-
 The Lustre Storage Report consists of two separate Python programms:
 
-1. rbh-acct-stat-history.py - Takes daily snapshot of aggregated storage consumption per user.
-1. rbh-acct-report.py - Creates a chart pie with top n groups which can be sent per mail.
+1. rbh-acct-stat-history.py
+1. rbh-acct-report.py
 
 ### rbh-acct-stat-history.py
+
+__Description:__
+
+This program takes daily snapshots of aggregated storage consumption per user from the Robinhood accounting database table and saves the gathered information in a separate accounting history table for further analysis or processing.
 
 __Requisites:__
 
@@ -126,7 +128,6 @@ sender    =·
 recipient =·
 ```
 
-
 __Script Execution:__
 
 Executing the rbh-acct-stat-history with debug messages saved into a proper log file:
@@ -153,6 +154,9 @@ __Schema of the Accounting History Table:__
 
 ### rbh-acct-report.py
 
+__Description:__
+
+It creates pie charts with top n groups which can be sent per mail based on a date from the accounting history table or directly from the Robinhood accuting table.
 
 __Requisites:__
 
@@ -161,8 +165,54 @@ __Requisites:__
 
 __Script Parameter:__
 
+* -f/--config-file: Path of the config file.
+* -D/-enable-debug: Enables logging of debug messages.
+* --snapshot-date: Specifies snapshot date for creating pie chart from history table in format: Y-m-d.
+* --no-mail: Disables e-mail notification.
+
+__Structure of the Configuration File:__
+
+```
+[mysqld]
+host                    =
+user                    =
+password                =
+
+[robinhood]
+database                = robinhood_fs
+acct_stat_table         = ACCT_STAT
+
+[history]
+database                = report_fs
+acct_stat_history_table = ACCT_STAT_HISTORY
+
+[chart]
+num_top_groups           = 8
+save_dir                 = /home/data/chart
+
+[chart_pie]
+filename                  = storage_usage_lustre_fs
+filetype                  = svg
+
+[mail]
+server                    =
+sender                    =
+recipient_list            =
+
+[storage]
+filesystem = /lustre/fs
+```
 
 __Script Execution:__
 
+Executing the rbh-acct-report with debug messages saved into a proper log file:
+
+```
+./rbh-acct-report.py -f rbh-acct-report.conf -D >> rbh-acct-report.log 2>&1
+```
 
 __Output Schema:__
+
+Generated pie chart with n top groups based on a date from the accounting history table:
+
+![Example Storage Report](images/example_storage_report_lustre_nyx.svg)
