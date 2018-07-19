@@ -279,8 +279,10 @@ def main():
                      
                      last_notify_check = notify_item.last_notify
 
-                     # TODO: Remove check on Zero-Datetime and test is on MySQL 5!
-                     if last_notify_check == None or str( last_notify_check ) == '0000-00-00 00:00:00':
+                     if last_notify_check == None:
+
+                        logging.debug('Retrieved empty notify_item.last_notify!')
+
                         last_notify_check = datetime.datetime( 1970, 1, 1, 00, 00, 00 )
                      
                      last_notify_threshold = last_notify_check + datetime.timedelta( days = check_interval_days )
