@@ -87,10 +87,14 @@ __Description:__
 
 The Lustre Storage Report consists of two separate Python programms:
 
-1. rbh-acct-stat-history.py - Takes daily snapshot of aggregated storage consumption per user.
+1. rbh-acct-stat-history.py - Takes daily snapshot of aggregated storage consumption per user out of Robinhood's  accounting database table.
 1. rbh-acct-report.py - Creates a chart pie with top n groups which can be sent per mail.
 
 __Requisites:__
+
+* Robinhood Policy Engine
+* python-mysqldb - Python interface to MySQL
+* python-matplotlib - Python based plotting system in a style similar to Matlab
 
 __Script Parameter:__
 
