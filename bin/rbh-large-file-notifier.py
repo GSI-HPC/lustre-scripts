@@ -22,7 +22,6 @@ import ConfigParser
 import logging
 import argparse
 import MySQLdb
-import sys
 import os
 import re
 import time, datetime
@@ -31,9 +30,7 @@ import commands
 
 from contextlib import closing
 from cStringIO import StringIO
-from subprocess import Popen
-
-from lib.entries_table_handler  import EntriesTableHandler
+from lib.entries_table_handler import EntriesTableHandler
 from lib.notifier_table_handler import NotifierTableHandler, NotifyInfo
 
 

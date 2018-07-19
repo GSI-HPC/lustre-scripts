@@ -131,7 +131,7 @@ def main():
    parser = argparse.ArgumentParser( description='Fills accounting history table.' )
    parser.add_argument( '-f', '--config-file', dest='config_file', type=str, required=True, help='Path of the config file.' )
    parser.add_argument( '-D', '--enable-debug', dest='enable_debug', required=False, action='store_true', help='Enables logging of debug messages.' )
-   parser.add_argument( '--create-table', dest='create_table', required=False, action='store_true', help='If set the notifiers table is created.' )
+   parser.add_argument( '--create-table', dest='create_table', required=False, action='store_true', help='If set the accounting history table is created.' )
    
    args = parser.parse_args()
    
