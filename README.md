@@ -289,3 +289,15 @@ __Schema of the Notifier Table:__
 7 rows in set (0.00 sec)
 
 ```
+
+__Mail Text for Administrators:__
+
+```
+Dear All,
+
+this is the automated report of stored large files on '/lustre/fs' that are equal or larger than 500GB.
+
+The following information is provided in CSV format: uid;size;path;last_notify
+
+...
+```
