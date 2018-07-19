@@ -22,9 +22,8 @@ import ConfigParser
 import logging
 import argparse
 import MySQLdb
-import sys
 import os
-import time, datetime
+import time
 import smtplib
 
 from contextlib import closing
