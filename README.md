@@ -135,8 +135,21 @@ Executing the rbh-acct-stat-history with debug messages saved into a proper log 
 ./rbh-acct-stat-history.py -f rbh-acct-stat-history.conf -D >> rbh-acct-stat-history.log 2>&1
 ```
 
-__Output Schema:__
+__Schema of the Accounting History Table:__
 
+```
++-------+---------------------+------+-----+------------------+-------+
+| Field | Type                | Null | Key | Default          | Extra |
++-------+---------------------+------+-----+------------------+-------+
+| uid   | varbinary(127)      | NO   | PRI | 0x756E6B6E6F776E |       |
+| gid   | varbinary(127)      | NO   | PRI | 0x756E6B6E6F776E |       |
+| size  | bigint(20) unsigned | YES  |     | 0                |       |
+| count | bigint(20) unsigned | YES  |     | 0                |       |
+| date  | date                | NO   | PRI | NULL             |       |
++-------+---------------------+------+-----+------------------+-------+
+5 rows in set (0.00 sec)
+
+```
 
 ### rbh-acct-report.py
 
