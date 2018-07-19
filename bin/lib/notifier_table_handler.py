@@ -40,7 +40,7 @@ class NotifyInfo:
 
    def to_sql_values(self):
 
-      sql_values = self.fid + "', '" + self.uid + "', " + str( self.size ) + ", '" + self.path + "', '" + self.last_check + "', "
+      sql_values = "'" + self.fid + "', '" + self.uid + "', " + str( self.size ) + ", '" + self.path + "', '" + self.last_check + "', "
 
       if self.last_notify is None:
          sql_values += 'NULL'
@@ -130,12 +130,12 @@ PRIMARY KEY (fid)
       
       sql = "INSERT INTO " + self.db + "." + self.table + " VALUES "
       
-      sql += "('" + new_notify_info_list[ 0 ].to_sql_values() + ")"
+      sql += "(" + new_notify_info_list[ 0 ].to_sql_values() + ")"
       
       if len( new_notify_info_list ) > 1:
          
          for notify_info in new_notify_info_list[ 1: ]:
-            sql += ", ('" + notify_info.to_sql_values() + "')"
+            sql += ", (" + notify_info.to_sql_values() + ")"
       
       self.logger.debug( sql )
       self.cur.execute( sql )
