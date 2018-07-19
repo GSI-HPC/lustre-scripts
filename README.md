@@ -290,7 +290,7 @@ __Schema of the Notifier Table:__
 
 ```
 
-__Mail Text for Administrators:__
+__Example Mail Text for Administrators:__
 
 ```
 Dear All,
@@ -298,6 +298,18 @@ Dear All,
 this is the automated report of stored large files on '/lustre/fs' that are equal or larger than 500GB.
 
 The following information is provided in CSV format: uid;size;path;last_notify
+
+...
+```
+
+__Example Mail Text for Users:__
+
+```
+Dear user *uid*,
+
+this is an automated e-mail that contains a list of your stored files on '/lustre/fs' that are equal or larger than 500GB.
+
+Please check if you really need those files stored on the file system.
 
 ...
 ```
