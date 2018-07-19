@@ -100,10 +100,40 @@ python-mysqldb - Python interface to MySQL
 
 __Script Parameter:__
 
+* -f/--config-file: Path of the config file.
+* -D/-enable-debug: Enables logging of debug messages.
+* --create-table: If set the notifiers table is created.
+
+__Structure of the Configuration File:__
+
+```
+[mysqld]
+host          =·
+user          =·
+password      =·
+
+[history]
+database                =·
+acct_stat_history_table = ACCT_STAT_HISTORY
+
+[robinhood]
+database        =·
+acct_stat_table = ACCT_STAT
+
+[mail]
+server    =·
+sender    =·
+recipient =·
+```
 
 
 __Script Execution:__
 
+Executing the rbh-acct-stat-history with debug messages saved into a proper log file:
+
+```
+./rbh-acct-stat-history.py -f rbh-acct-stat-history.conf -D >> rbh-acct-stat-history.log 2>&1
+```
 
 __Output Schema:__
 
