@@ -85,7 +85,12 @@ DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
 
 __Description:__
 
+The Lustre Storage Report consists of two separate Python programms:
 
+1. rbh-acct-stat-history.py - Takes daily snapshot of aggregated storage consumption per user.
+1. rbh-acct-report.py - Creates a chart pie with top n groups which can be sent per mail.
+
+__Requisites:__
 
 __Script Parameter:__
 
