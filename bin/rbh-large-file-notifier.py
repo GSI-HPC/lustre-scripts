@@ -299,7 +299,7 @@ def main():
 
                   else:
                      
-                     new_notify_info = NotifyInfo( entry_info.fid, entry_info.uid, entry_info.size, entry_info.path, check_timestamp, None )
+                     new_notify_info = NotifyInfo( entry_info.fid, entry_info.uid, entry_info.size, entry_info.path, check_timestamp )
                      
                      new_notify_info_list.append( new_notify_info )
                      

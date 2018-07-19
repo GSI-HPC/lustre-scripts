@@ -28,7 +28,7 @@ def convert_number_human_readable( number ):
 
 class NotifyInfo:
    
-   def __init__( self, fid, uid, size, path, last_check, last_notify ):
+   def __init__( self, fid, uid, size, path, last_check, last_notify = 'NULL', ignore_notify = 'FALSE' ):
          
          self.fid           = fid
          self.uid           = uid
@@ -36,14 +36,14 @@ class NotifyInfo:
          self.path          = path
          self.last_check    = last_check
          self.last_notify   = last_notify
-         self.ignore_notify = 'FALSE'
+         self.ignore_notify = ignore_notify
 
    def to_sql_values(self):
 
       sql_values = "'" + self.fid + "', '" + self.uid + "', " + str( self.size ) + ", '" + self.path + "', '" + self.last_check + "', "
 
-      if self.last_notify is None:
-         sql_values += 'NULL'
+      if self.last_notify == 'NULL':
+         sql_values += self.last_notify
       else:
          sql_values += "'" + self.last_notify + "'"
 
