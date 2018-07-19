@@ -279,7 +279,7 @@ def main():
                      
                      last_notify_check = notify_item.last_notify
 
-                     if last_notify_check == None:
+                     if last_notify_check == 'NULL':
 
                         logging.debug('Retrieved empty notify_item.last_notify!')
 

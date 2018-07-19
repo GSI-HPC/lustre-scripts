@@ -54,7 +54,7 @@ class NotifyInfo:
    def export_compact_to_csv( self ):
       return convert_number_human_readable( self.size ) + ";" + self.path + "\n"
 
-   def export_full_to_csv( self ):      
+   def export_full_to_csv( self ):
       return self.uid + ";" + convert_number_human_readable( self.size ) + ";" + self.path + ";" + self.last_notify + "\n"
 
 
@@ -122,7 +122,19 @@ PRIMARY KEY (fid)
       result = self.cur.fetchone()
       
       if result:
-         return NotifyInfo( result[ 0 ], result[ 1 ], result[ 2 ], result[ 3 ], result[ 4 ], result[ 5 ], result[ 6 ] )
+
+         fid           = result[ 0 ]
+         uid           = result[ 1 ]
+         size          = result[ 2 ]
+         path          = result[ 3 ]
+         last_check    = result[ 4 ]
+         last_notify   = result[ 5 ]
+         ignore_notify = result[ 6 ]
+
+         if last_notify is None:
+            last_notify = 'NULL'
+
+         return NotifyInfo( fid, uid, size, path, last_check, last_notify, ignore_notify )
       
       return None
 
