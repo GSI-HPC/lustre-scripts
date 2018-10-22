@@ -26,6 +26,8 @@ import subprocess
 LFS_BIN = '/usr/bin/lfs'
 
 
+# TODO: Check group not exists...
+
 def retrieve_group_quota(gid, fs):
 
     output = subprocess.check_output([LFS_BIN, "quota", "-g", gid, fs])
@@ -51,7 +53,7 @@ def extract_soft_quota(output):
     lines = output.rstrip().split('\n')
 
     if len(lines) != 3:
-        raise RuntimeError("Output has more than 3 lines: %s." % output)
+        raise RuntimeError("Output has more than 3 lines: %s" % output)
 
     fields_line = lines[2].strip()
     
