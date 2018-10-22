@@ -34,7 +34,7 @@ import time
 import smtplib
 
 from contextlib import closing
-from retrieve_lfs_quota import retrieve_lfs_group_quota
+from lib.retrieve_quota import retrieve_group_quota
 
 
 def raise_option_not_found(section, option):
@@ -88,25 +88,23 @@ def main():
 
     logging.basicConfig(level=logging_level, 
         format='%(asctime)s - %(levelname)s: %(message)s')
-
-    logging.info('START')
-
-    config = ConfigParser.ConfigParser()
-    config.read(args.config_file)
-
-    validate_config_file(config)
     
     try:
-        logging.info('START')
+         logging.info('START')
         
-        retrieve_lfs_group_quota('hpc', '/lustre/nyx')
+        config = ConfigParser.ConfigParser()
+        config.read(args.config_file)
+        
+        validate_config_file(config)
+        
+        retrieve_group_quota('hpc', '/lustre/nyx')
         
         logging.info('END')
-
+        
         return 0
-   
-   except Exception as e:
-      
+        
+    except Exception as e:
+        
         error_msg = str(e)
         logging.error(error_msg)
 
