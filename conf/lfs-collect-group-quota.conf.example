@@ -1,0 +1,15 @@
+[lustre]
+file_system = /lustre/nyx
+
+[mysqld]
+host          = 
+user          = 
+password      = 
+
+[robinhood]
+database        =
+acct_stat_table = ACCT_STAT
+
+[history]
+database                =
+acct_stat_history_table = GROUP_QUOTA_HISTORY
