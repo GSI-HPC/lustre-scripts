@@ -110,7 +110,6 @@ def take_acct_stat_snapshot(cur,
    sql = "INSERT INTO %s.%s " \
          "SELECT uid, gid, SUM(size), SUM(count), '%s' " \
          "FROM %s.%s " \
-         "WHERE type='file' " \
          "GROUP BY 1,2" \
       % (history_db, history_acct_table, date, rbh_db, rbh_acct_table)
    
