@@ -41,33 +41,63 @@ def raise_option_not_found(section, option):
    raise Exception("Option: %s not found in section: %s" % (option, section))
 
 
-def create_group_quota_history_table(cur, db, table):
-   pass
+def create_group_quota_history_table(config):
+
+    db = config.get('history', 'database')
+
+    group_quota_history_table = \
+        config.get('history', 'group_quota_history_table')
+
+    with closing(MySQLdb.connect(host=config.get('mysqld', 'host'),
+                                 user=config.get('mysqld', 'user'),
+                                 passwd=config.get('mysqld', 'password'),
+                                 db=db)) as conn:
+
+        with closing(conn.cursor()) as cur:
+
+            conn.autocommit(True)
+
+            sql = "USE " + db
+
+            logging.debug(sql)
+            cur.execute(sql)
+
+            sql = """
+CREATE TABLE """ + group_quota_history_table + """ (
+   date date NOT NULL,
+   gid varbinary(127) NOT NULL DEFAULT 'unknown',
+   quota bigint(20) unsigned DEFAULT '0',
+   PRIMARY KEY (gid,date)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1
+"""
+
+            cur.execute(sql)
+            logging.debug("Created table:\n%s" % sql)
 
 
 def retrieve_group_names(config):
 
     group_names = list()
 
-    rbh_db = config.get('robinhood', 'database')
     rbh_acct_table = config.get('robinhood', 'acct_stat_table')
 
     with closing(MySQLdb.connect(host=config.get('mysqld', 'host'),
                                  user=config.get('mysqld', 'user'),
                                  passwd=config.get('mysqld', 'password'),
-                                 db=rbh_db)) as connection:
+                                 db=config.get('robinhood', 'database'))) \
+        as conn:
         
-        with closing(connection.cursor()) as cursor:
+        with closing(conn.cursor()) as cur:
             
             sql = "SELECT gid FROM %s WHERE type='file' GROUP BY 1" \
                 % rbh_acct_table
             
-            cursor.execute(sql)
+            cur.execute(sql)
             
-            if not cursor.rowcount:
+            if not cur.rowcount:
                 raise RuntimeError("No rows returned from query: %s" % sql)
 
-            for gid in cursor.fetchall():
+            for gid in cur.fetchall():
 
                 logging.debug("Found GID: %s" % gid[0])
                 group_names.append(str(gid[0]))
@@ -132,6 +162,9 @@ def main():
         
         config = ConfigParser.ConfigParser()
         config.read(args.config_file)
+
+        if args.create_table:
+            create_group_quota_history_table(config)
 
         fs = config.get('lustre', 'file_system')
 
