@@ -18,13 +18,6 @@
 #
 
 
-# TODO: Extract Redundant Utility Code.
-
-# TODO: Add mode for user/group to collect all data for that.
-
-
-
-
 import ConfigParser
 import logging
 import argparse
@@ -89,8 +82,7 @@ def retrieve_group_names(config):
         
         with closing(conn.cursor()) as cur:
             
-            sql = "SELECT gid FROM %s WHERE type='file' GROUP BY 1" \
-                % rbh_acct_table
+            sql = "SELECT gid FROM %s GROUP BY 1" % rbh_acct_table
             
             cur.execute(sql)
             
@@ -130,6 +122,12 @@ def save_group_quota_map(config, date, iter_items):
 
             logging.debug(sql)
             cur.execute(sql)
+
+            if not cur.rowcount:
+                raise RuntimeError("Snapshot failed for date: %s." % date)
+
+            logging.info("Inserted rows: %d into table: %s for date: %s"
+                         % (cur.rowcount, group_quota_history_table, date))
 
 
 def main():
