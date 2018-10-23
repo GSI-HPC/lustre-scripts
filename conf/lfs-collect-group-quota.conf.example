@@ -11,5 +11,5 @@ database        =
 acct_stat_table = ACCT_STAT
 
 [history]
-database                =
-acct_stat_history_table = GROUP_QUOTA_HISTORY
+database                  =
+group_quota_history_table = GROUP_QUOTA_HISTORY

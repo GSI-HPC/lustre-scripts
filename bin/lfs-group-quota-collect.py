@@ -70,9 +70,9 @@ CREATE TABLE """ + group_quota_history_table + """ (
    PRIMARY KEY (gid,date)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1
 """
-
+            logging.debug(sql)
             cur.execute(sql)
-            logging.debug("Created table:\n%s" % sql)
+
 
 
 def retrieve_group_names(config):
@@ -105,14 +105,31 @@ def retrieve_group_names(config):
     return group_names
 
 
-def take_group_quota_snapshot(cur, 
-                              rbh_db, 
-                              rbh_acct_table, 
-                              history_db, 
-                              history_acct_table, 
-                              date):
-       
-   pass
+def save_group_quota_map(config, date, iter_items):
+
+    group_quota_history_table = \
+        config.get('history', 'group_quota_history_table')
+
+    with closing(MySQLdb.connect(host=config.get('mysqld', 'host'),
+                                 user=config.get('mysqld', 'user'),
+                                 passwd=config.get('mysqld', 'password'),
+                                 db=config.get('history', 'database'))) \
+        as conn:
+
+        with closing(conn.cursor()) as cur:
+
+            sql = "INSERT INTO %s (date, gid, quota) VALUES" % \
+                group_quota_history_table
+
+            gid, quota = next(iter_items)
+
+            sql += "('%s', '%s', %s)" % (date, gid, quota)
+
+            for gid, quota in iter_items:
+                sql += ", ('%s', '%s', %s)" % (date, gid, quota)
+
+            logging.debug(sql)
+            cur.execute(sql)
 
 
 def main():
@@ -159,12 +176,18 @@ def main():
 
     try:
         logging.info('START')
+
+        date_today = time.strftime('%Y-%m-%d')
         
         config = ConfigParser.ConfigParser()
         config.read(args.config_file)
 
         if args.create_table:
+
             create_group_quota_history_table(config)
+
+            logging.info('END')
+            return 0
 
         fs = config.get('lustre', 'file_system')
 
@@ -198,28 +221,12 @@ def main():
                 print("%s:%s" % (key, value))
 
         if run_mode == 'collect':
-            pass
 
-        #
-        # history_db = config.get('history', 'database')
-        # history_acct_table = config.get('history', 'group_quota_history_table')
-        #
-        # with closing(MySQLdb.connect(host=config.get('mysqld', 'host'),
-        #                              user=config.get('mysqld', 'user'),
-        #                              passwd=config.get('mysqld', 'password'),
-        #                              db=rbh_db)) as conn:
-        #
-        #     with closing(conn.cursor()) as cur:
-        #         conn.autocommit(True)
-        #
-        #         if args.create_table:
-        #             # create_acct_history_table(cur, history_db, history_acct_table)
-        #             pass
-        #
-        #         date_today = time.strftime('%Y-%m-%d')
+            iter_items = group_quota_map.iteritems()
+
+            save_group_quota_map(config, date_today, iter_items)
         
         logging.info('END')
-        
         return 0
         
     except Exception as e:
