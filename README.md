@@ -82,6 +82,8 @@ DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
 
 ## Lustre Storage Report
 
+ DEPRECATED, since the project has been completely recreated for GSI HPC internal use in terms of a storage reporting tool.
+
 __Description:__
 
 The Lustre Storage Report consists of two separate Python programms:
