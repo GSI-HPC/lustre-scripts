@@ -4,14 +4,14 @@ import sys
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-l", "--log-file", dest="log_file", type=str, 
+parser.add_argument("-i", "--input-file", dest="input_file", type=str, 
     help="Robinhood log file.")
 parser.add_argument("-m", "--metric", dest="metric", type=str, 
     help="Metric to process e.g. a stage name or 'avg. speed'.")
 args = parser.parse_args()
 
 print("--- Arguments ---\nLog file: %s\nMetric: %s\n" % 
-    (args.log_file, args.metric))
+    (args.input_file, args.metric))
 
 def get_stage_values(metric, f):
 
@@ -35,7 +35,7 @@ values = list()
 SUPPORTED_STAGES = ['GET_FID', 'GET_INFO_DB', 'GET_INFO_FS', 'PRE_APPLY',\
         'DB_APPLY', 'CHGLOG_CLR', 'RM_OLD_ENTRIES']
 
-with open(args.log_file) as f:
+with open(args.input_file) as f:
 
     if args.metric == 'avg. speed':
 
