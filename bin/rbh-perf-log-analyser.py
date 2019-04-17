@@ -8,6 +8,7 @@ parser.add_argument("-i", "--input-file", dest="input_file", type=str,
     help="Robinhood log file.")
 parser.add_argument("-m", "--metric", dest="metric", type=str, 
     help="Metric to process e.g. a stage name or 'avg. speed'.")
+
 args = parser.parse_args()
 
 print("--- Arguments ---\nLog file: %s\nMetric: %s\n" % 
@@ -24,7 +25,11 @@ def get_stage_values(metric, f):
             fields = line.split('|')
 
             if(len(fields)) == 8:
-                values.append(float(fields[6]))
+
+                value = float(fields[6])
+
+                if value:
+                    values.append(value)
 
     return values
 
@@ -52,9 +57,14 @@ with open(args.input_file) as f:
     else:
         raise RuntimeError("Unknown or not supported metric: %s" % args.metric)
 
-for val in values:
-    sum_values += val
+if values:
 
-avg = round(sum_values / len(values), 2)
+    for val in values:
+        sum_values += val
 
-print("avg: %s" % avg)
+    avg = round(sum_values / len(values), 2)
+
+    print("avg: %s" % avg)
+
+else:
+    print("No values retrieved!")
