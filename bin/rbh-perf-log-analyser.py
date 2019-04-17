@@ -32,9 +32,16 @@ args = parser.parse_args()
 print("--- Arguments ---\nLog file: %s\nMetric: %s\n" % 
     (args.input_file, args.metric))
 
+class ResultItem:
+
+    def __init__(self, value, count):
+
+        self.value = value
+        self.count = count
+
 def get_stage_values(metric, f):
 
-    values = list()
+    result_items = list()
 
     for line in f:
 
@@ -43,17 +50,17 @@ def get_stage_values(metric, f):
             fields = line.split('|')
 
             if(len(fields)) == 8:
-
+                
+                count = int(fields[5])
                 value = float(fields[6])
 
-                if value:
-                    values.append(value)
+                if count and value:
+                    result_items.append(ResultItem(value, count))
 
-    return values
+    return result_items
 
 
-sum_values = 0
-values = list()
+result_items = list()
 
 SUPPORTED_STAGES = ['GET_FID', 'GET_INFO_DB', 'GET_INFO_FS', 'PRE_APPLY',\
         'DB_APPLY', 'CHGLOG_CLR', 'RM_OLD_ENTRIES']
@@ -67,22 +74,29 @@ with open(args.input_file) as f:
             if args.metric in line:
 
                 result = line.split(':', 3)[3]
-                scan_speed = result.split('entries')[0]
-                values.append(float(scan_speed))
+                scan_speed = float(result.split('entries')[0])
+                result_items.append(ResultItem(scan_speed, 0))
 
     elif args.metric in SUPPORTED_STAGES:
-        values.extend(get_stage_values(args.metric, f))
+        result_items.extend(get_stage_values(args.metric, f))
     else:
         raise RuntimeError("Unknown or not supported metric: %s" % args.metric)
 
-if values:
+if result_items:
 
-    for val in values:
-        sum_values += val
+    sum_values = 0
+    total_count = 0
 
-    avg = round(sum_values / len(values), 2)
+    for item in result_items:
+        
+        sum_values += item.value
+        total_count += item.count
 
-    print("avg: %s" % avg)
+    avg = round(sum_values / len(result_items), 2)
+
+    print("--- Results ---")
+    print("Average Speed: %s" % avg)
+    print("Total Count: %s" % total_count)
 
 else:
-    print("No values retrieved!")
+    print("No result_items retrieved!")
