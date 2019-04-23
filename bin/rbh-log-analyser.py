@@ -86,17 +86,29 @@ if result_items:
 
     sum_values = 0
     total_count = 0
+    
+    # Initialize with first item value.
+    min_value = result_items[0].value
+    max_value = result_items[0].value
 
     for item in result_items:
         
         sum_values += item.value
         total_count += item.count
 
+        if item.value < min_value:
+            min_value = item.value
+
+        if item.value > max_value:
+            max_value = item.value
+
     avg = round(sum_values / len(result_items), 2)
 
     print("--- Results ---")
     print("Average Speed: %s" % avg)
     print("Total Count: %s" % total_count)
+    print("Min value: %s" % min_value)
+    print("Max value: %s" % max_value)
 
 else:
     print("No result_items retrieved!")
