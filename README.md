@@ -82,7 +82,8 @@ DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
 
 ## Lustre Storage Report
 
- DEPRECATED, since the project has been completely recreated for GSI HPC internal use in terms of a storage reporting tool.
+ !!! DEPRECATED!!!,  
+ since the project has been completely recreated for GSI HPC internal use in terms of a storage reporting tool.
 
 __Description:__
 
@@ -154,6 +155,9 @@ __Schema of the Accounting History Table:__
 ```
 
 ### rbh-acct-report.py
+
+ !!! DEPRECATED!!!,  
+ since the project has been completely recreated for GSI HPC internal use in terms of a storage reporting tool.
 
 __Description:__
 
