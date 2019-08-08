@@ -29,20 +29,36 @@ def create_job_stats_file(args):
 
     with open(args.path_jobstats_file, 'w') as jobstats_file:
 
-        jobstats_call = "lctl get_param *.*.job_stats | show_high_jobstats.pl -o " + str(args.min_samples)
+        jobstats_call = \
+            "lctl get_param *.*.job_stats | show_high_jobstats.pl -o " + \
+            str(args.min_samples)
+
+        logging.debug("retrieve job stats: %s" % jobstats_call)
 
         # TODO: Use clush API to detect errors and getting the output.
-        jobstats_output = subprocess.check_output(['clush', '-l', args.user, '-w', args.oss_nodes, jobstats_call],
-                                                  stderr=subprocess.STDOUT)
+        jobstats_output = \
+            subprocess.check_output(
+                [
+                    'clush', 
+                    '-l', 
+                    args.user, 
+                    '-w', 
+                    args.oss_nodes, 
+                    jobstats_call
+                ],
+                stderr=subprocess.STDOUT)
 
         jobstats_output_lines = jobstats_output.splitlines()
 
         for jobstat_line in jobstats_output_lines:
 
-            logging.debug("Retrieved line from show_high_jobstats: %s" % jobstat_line)
+            logging.debug("Retrieved line from show_high_jobstats: %s" \
+                % jobstat_line)
 
             if create_jobstat_item(jobstat_line):
-                logging.debug("Writing jobstat line to file: %s" % jobstat_line)
+
+                logging.debug("Writing jobstat line to file: %s" \
+                    % jobstat_line)
 
                 jobstats_file.write(jobstat_line + "\n")
 
@@ -92,7 +108,8 @@ class OSSStatItem:
         self.write_samples = write_samples
 
     def to_string(self):
-        return ("%s:%s:%s" % (self.oss_name, self.read_samples, self.write_samples))
+        return ("%s:%s:%s" % 
+            (self.oss_name, self.read_samples, self.write_samples))
 
 
 class JobStatInfoItem:
@@ -109,7 +126,7 @@ def create_job_stat_info_item_dict(path_jobstats_file):
 
         with open(path_jobstats_file, 'r') as jobstats_file:
 
-            logging.debug('Processing jobstat file for initializing job_stat_info_item_dict.')
+            logging.debug('Processing jobstat file...')
 
             job_stat_info_item_dict = dict()
 
@@ -127,7 +144,11 @@ def create_job_stat_info_item_dict(path_jobstats_file):
                 if jobstat_item.operation_type == 'write':
                     write_samples = jobstat_item.sample_count
 
-                oss_stat_item = OSSStatItem(jobstat_item.oss_name, read_samples, write_samples)
+                oss_stat_item = \
+                    OSSStatItem(
+                        jobstat_item.oss_name, 
+                        read_samples, 
+                        write_samples)
 
                 job_id = jobstat_item.job_id
 
@@ -135,9 +156,12 @@ def create_job_stat_info_item_dict(path_jobstats_file):
 
                     job_stat_info_item = job_stat_info_item_dict[job_id]
 
-                    if oss_stat_item.oss_name in job_stat_info_item.oss_stat_item_dict:
+                    if oss_stat_item.oss_name in \
+                        job_stat_info_item.oss_stat_item_dict:
 
-                        oss_stat_item = job_stat_info_item.oss_stat_item_dict[oss_stat_item.oss_name]
+                        oss_stat_item = \
+                            job_stat_info_item.oss_stat_item_dict[ \
+                                oss_stat_item.oss_name]
 
                         if read_samples is not None:
                             oss_stat_item.read_samples = read_samples
@@ -145,12 +169,15 @@ def create_job_stat_info_item_dict(path_jobstats_file):
                             oss_stat_item.write_samples = write_samples
 
                     else:
-                        job_stat_info_item.oss_stat_item_dict[oss_stat_item.oss_name] = oss_stat_item
+                        job_stat_info_item.oss_stat_item_dict[ \
+                            oss_stat_item.oss_name] = oss_stat_item
 
                 else:
 
                     job_stat_info_item = JobStatInfoItem(job_id)
-                    job_stat_info_item.oss_stat_item_dict[oss_stat_item.oss_name] = oss_stat_item
+
+                    job_stat_info_item.oss_stat_item_dict[ \
+                        oss_stat_item.oss_name] = oss_stat_item
 
                     job_stat_info_item_dict[job_id] = job_stat_info_item
 
@@ -187,7 +214,7 @@ def create_squeue_info_item(squeue_line):
     squeue_info_item_fields = squeue_line.split('|')
 
     if len(squeue_info_item_fields) != 6:
-        raise RuntimeError("Invalid number of fields detected in squeue item: %s" % squeue_line)
+        raise RuntimeError("Invalid number of fields: %s" % squeue_line)
 
     base_job_id = int(squeue_info_item_fields[0])
     job_id = int(squeue_info_item_fields[1])
@@ -201,7 +228,8 @@ def create_squeue_info_item(squeue_line):
 
 def create_squeue_info_list(args, job_id_list):
 
-    # TODO: Check count of job ids and maybe split the list for multiple squeue calls to do not overloading the SLURM controller!
+    # TODO: Check count of job ids and maybe split the list for 
+    #       multiple squeue calls to do not overloading the SLURM controller!
     len_job_id_list = len(job_id_list)
 
     job_id_csv = ''
@@ -218,15 +246,18 @@ def create_squeue_info_list(args, job_id_list):
         if job_id_csv == '':
             raise RuntimeError('job_id_csv should not be empty!')
 
-        logging.debug('Retrieving information about jobs located in the SLURM scheduling queue...')
+        logging.debug('Querying SLURM scheduling queue...')
 
-        squeue_call = "squeue --noheader --sort 'i' --format '%F|%A|%u|%g|%N|%o' -j " + job_id_csv
+        squeue_call = \
+            "squeue --noheader --sort 'i' --format '%F|%A|%u|%g|%N|%o' -j " \
+                + job_id_csv
 
         logging.debug(squeue_call)
 
         user_at_host = args.user + '@' + args.client_node
 
-        squeue_output = subprocess.check_output(['ssh', user_at_host, squeue_call], stderr=subprocess.STDOUT)
+        squeue_output = subprocess.check_output(
+            ['ssh', user_at_host, squeue_call], stderr=subprocess.STDOUT)
 
         return squeue_output.lstrip().splitlines()
 
@@ -249,7 +280,8 @@ class JobInfoItem:
                         self.group + "|" + \
                         self.command + "|"
 
-        # Since no indexed access is possible in a set, iterate over it with a counter evaluation...
+        # Since no indexed access is possible in a set, 
+        # iterate over it with a counter evaluation...
         item_counter = 1
 
         for node in self.node_set:
@@ -281,26 +313,33 @@ def init_arg_parser():
 
     parser = argparse.ArgumentParser(description='Lustre Job Analyser')
 
-    parser.add_argument('-D', '--enable-debug', dest='enable_debug', required=False, action='store_true',
-                        help='Enables debug log messages.')
+    parser.add_argument('-D', '--enable-debug', dest='enable_debug',
+        required=False, action='store_true',
+        help='Enable debug messages.')
 
-    parser.add_argument('-u', '--user', dest='user', type=str, required=True,
-                        help='User for executing remote commands.')
+    parser.add_argument('-u', '--user', dest='user',
+        type=str, required=True,
+        help='User for executing remote commands.')
 
-    parser.add_argument('-s', '--oss-nodes', dest='oss_nodes', type=str, required=True,
-                        help='Specification of OSS nodes by using ClusterShell NodeSet syntax.')
+    parser.add_argument('-s', '--oss-nodes', dest='oss_nodes',
+        type=str, required=True,
+        help='Specifies OSS nodes by using ClusterShell NodeSet syntax.')
 
-    parser.add_argument('-n', '--client-node', dest='client_node', type=str, required=True,
-                        help='Specification of Client Node.')
+    parser.add_argument('-n', '--client-node', dest='client_node',
+        type=str, required=True,
+        help='Specifies client node.')
 
-    parser.add_argument('-m', '--min-samples', dest='min_samples', type=int, required=True,
-                        help='Minimum number of read or write Lustre jobstats sample count.')
+    parser.add_argument('-m', '--min-samples', dest='min_samples',
+        type=int, required=True,
+        help='Minimum number of read or write Lustre jobstats sample count.')
 
-    parser.add_argument('-j', '--path-jobstat-file', dest='path_jobstats_file', type=str, required=True,
-                        help='Specifies path to save Lustre jobstats file.')
+    parser.add_argument('-j', '--path-jobstat-file', dest='path_jobstats_file',
+        type=str, required=True,
+        help='Specifies path to save Lustre jobstats file.')
 
-    parser.add_argument('-C', '--create-jobstats-file', dest='create_jobstats_file', required=False, action='store_true',
-                        help='Specifies if a new Lustre jobstats file should be created.')
+    parser.add_argument('-C', '--create-jobstats-file', dest='create_jobstats_file', 
+        required=False, action='store_true',
+        help='Specifies if a new Lustre jobstats file should be created.')
 
     return parser.parse_args()
 
@@ -312,7 +351,8 @@ def init_logging(enable_debug):
     else:
         log_level = logging.INFO
 
-    logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
+    logging.basicConfig(level=log_level,
+        format="%(asctime)s - %(levelname)s: %(message)s")
 
 
 def main():
@@ -326,22 +366,31 @@ def main():
         logging.debug('START')
 
         logging.info('Checking OSS Nodes: %s' % args.oss_nodes)
-        logging.info('Looking for Minimum Sample Count in Jobs: %s' % args.min_samples)
-        logging.info("Creating Lustre Jobstats File: %s", args.create_jobstats_file)
-        logging.info("Path for Lustre Jobstat File: %s", args.path_jobstats_file)
+
+        logging.info("Looking for Minimum Sample Count in Jobs: %s" %
+            args.min_samples)
+
+        logging.info("Creating Lustre Jobstats File: %s",
+            args.create_jobstats_file)
+
+        logging.info("Path for Lustre Jobstat File: %s",
+            args.path_jobstats_file)
 
         if args.create_jobstats_file:
             create_job_stats_file(args)
 
-        job_stat_info_item_dict = create_job_stat_info_item_dict(args.path_jobstats_file)
+        job_stat_info_item_dict = \
+            create_job_stat_info_item_dict(args.path_jobstats_file)
 
         len_job_stat_info_item_dict = len(job_stat_info_item_dict)
 
-        logging.debug("len(job_stat_info_item_dict): %s" % len_job_stat_info_item_dict)
+        logging.debug("len(job_stat_info_item_dict): %s" % 
+            len_job_stat_info_item_dict)
 
         if len_job_stat_info_item_dict > 0:
 
-            squeue_info_list = create_squeue_info_list(args, job_stat_info_item_dict.keys())
+            squeue_info_list = \
+                create_squeue_info_list(args, job_stat_info_item_dict.keys())
 
             job_info_item_dict = dict()
 
@@ -353,7 +402,8 @@ def main():
 
                 if squeue_info_item.job_id in job_stat_info_item_dict:
 
-                    job_stat_info_item = job_stat_info_item_dict[squeue_info_item.job_id]
+                    job_stat_info_item = \
+                        job_stat_info_item_dict[squeue_info_item.job_id]
 
                     job_info_item = None
 
@@ -365,17 +415,23 @@ def main():
                                         squeue_info_item.group,
                                         squeue_info_item.command)
 
-                        job_info_item_dict[squeue_info_item.base_job_id] = job_info_item
+                        job_info_item_dict[squeue_info_item.base_job_id] = \
+                            job_info_item
 
                     else:
-                        job_info_item = job_info_item_dict[squeue_info_item.base_job_id]
+                        job_info_item = \
+                            job_info_item_dict[squeue_info_item.base_job_id]
 
-                    job_info_item.oss_set = set(job_stat_info_item.oss_stat_item_dict.keys())
+                    job_info_item.oss_set = \
+                        set(job_stat_info_item.oss_stat_item_dict.keys())
+
                     job_info_item.node_set.add(squeue_info_item.node)
 
                 else:
-                    logging.warning("squeue_info_item.job_id not found in job_stat_info_item_dict: %s (Base Job-ID: %s)"
-                                    % (squeue_info_item.job_id, squeue_info_item.base_job_id))
+                    logging.warning("squeue_info_item.job_id not found in " \
+                        "job_stat_info_item_dict: %s (Base Job-ID: %s)"
+                            % (squeue_info_item.job_id, 
+                               squeue_info_item.base_job_id))
 
             for job_info_item in job_info_item_dict.values():
                 print(job_info_item.to_string())
@@ -390,7 +446,8 @@ def main():
         exc_type, exc_obj, exc_tb = sys.exc_info()
         filename = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 
-        logging.error("Caught exception in main function: %s - %s (line: %s)" % (str(e), filename, exc_tb.tb_lineno))
+        logging.error("Caught exception in main function: %s - %s (line: %s)" %
+            (str(e), filename, exc_tb.tb_lineno))
 
         os._exit(1)
 
