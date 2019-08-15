@@ -25,42 +25,39 @@ import sys
 import os
 
 
-def create_job_stats_file(args):
+def create_jobstat_lines(args):
 
-    with open(args.path_jobstats_file, 'w') as jobstats_file:
+    jobstat_lines = []
 
-        jobstats_call = \
-            "lctl get_param *.*.job_stats | show_high_jobstats.pl -o " + \
-            str(args.min_samples)
+    jobstats_call = \
+        "lctl get_param *.*.job_stats | show_high_jobstats.pl -o " + \
+        str(args.min_samples)
 
-        logging.debug("retrieve job stats: %s" % jobstats_call)
+    logging.debug(jobstats_call)
 
-        # TODO: Use clush API to detect errors and getting the output.
-        jobstats_output = \
-            subprocess.check_output(
-                [
-                    'clush', 
-                    '-l', 
-                    args.user, 
-                    '-w', 
-                    args.oss_nodes, 
-                    jobstats_call
-                ],
-                stderr=subprocess.STDOUT)
+    # TODO: Use clush API to detect errors and getting the output.
+    jobstats_output = \
+        subprocess.check_output(
+            [
+                'clush', 
+                '-l', 
+                args.user, 
+                '-w', 
+                args.oss_nodes, 
+                jobstats_call
+            ],
+        stderr=subprocess.STDOUT)
 
-        jobstats_output_lines = jobstats_output.splitlines()
+    jobstats_output_lines = jobstats_output.splitlines()
 
-        for jobstat_line in jobstats_output_lines:
+    for jobstat_line in jobstats_output_lines:
 
-            logging.debug("Retrieved line from show_high_jobstats: %s" \
-                % jobstat_line)
+        logging.debug("Jobstat line: %s" % jobstat_line)
 
-            if create_jobstat_item(jobstat_line):
+        if create_jobstat_item(jobstat_line):
+            jobstat_lines.append(jobstat_line + "\n")
 
-                logging.debug("Writing jobstat line to file: %s" \
-                    % jobstat_line)
-
-                jobstats_file.write(jobstat_line + "\n")
+    return jobstat_lines
 
 
 class JobstatItem:
@@ -75,7 +72,7 @@ class JobstatItem:
 
 def create_jobstat_item(jobstat_line):
 
-    if jobstat_line is None or jobstat_line == '':
+    if not jobstat_line:
         raise RuntimeError('Argument for jobstat_line was empty!')
 
     jobstat_item_fields = jobstat_line.split()
@@ -87,16 +84,18 @@ def create_jobstat_item(jobstat_line):
             jobstat_item_fields[4] != 'done' or \
             jobstat_item_fields[7] != 'operations.':
 
-        logging.warning("Skipping jobstat line: '%s'." % jobstat_line)
+        logging.debug("Skipping jobstat line: '%s'." % jobstat_line)
 
         return None
 
-    oss_name = jobstat_item_fields[0].split(':')[0]
-    job_id = int(jobstat_item_fields[2])
-    sample_count = int(jobstat_item_fields[5])
-    operation_type = jobstat_item_fields[6]
+    else:
 
-    return JobstatItem(oss_name, job_id, sample_count, operation_type)
+        oss_name = jobstat_item_fields[0].split(':')[0]
+        job_id = jobstat_item_fields[2] # keep as string
+        sample_count = int(jobstat_item_fields[5])
+        operation_type = jobstat_item_fields[6]
+
+        return JobstatItem(oss_name, job_id, sample_count, operation_type)
 
 
 class OSSStatItem:
@@ -120,71 +119,67 @@ class JobStatInfoItem:
         self.oss_stat_item_dict = dict()
 
 
-def create_job_stat_info_item_dict(path_jobstats_file):
+def create_job_stat_info_item_dict(jobstat_lines):
 
-    if os.path.isfile(path_jobstats_file):
+    if not jobstat_lines:
+        raise RuntimeError("Retrieved empty jobstat lines!")
 
-        with open(path_jobstats_file, 'r') as jobstats_file:
+    job_stat_info_item_dict = dict()
 
-            logging.debug('Processing jobstat file...')
+    for jobstat_line in jobstat_lines:
 
-            job_stat_info_item_dict = dict()
+        logging.debug(jobstat_line)
 
-            for jobstat_line in jobstats_file:
+        jobstat_item = create_jobstat_item(jobstat_line)
 
-                logging.debug(jobstat_line)
+        read_samples, write_samples = None, None
 
-                jobstat_item = create_jobstat_item(jobstat_line)
+        if jobstat_item.operation_type == 'read':
+            read_samples = jobstat_item.sample_count
 
-                read_samples, write_samples = None, None
+        if jobstat_item.operation_type == 'write':
+            write_samples = jobstat_item.sample_count
 
-                if jobstat_item.operation_type == 'read':
-                    read_samples = jobstat_item.sample_count
+        oss_stat_item = \
+            OSSStatItem(
+                jobstat_item.oss_name, 
+                read_samples, 
+                write_samples)
 
-                if jobstat_item.operation_type == 'write':
-                    write_samples = jobstat_item.sample_count
+        job_id = jobstat_item.job_id
+
+        if job_id in job_stat_info_item_dict:
+
+            job_stat_info_item = job_stat_info_item_dict[job_id]
+
+            if oss_stat_item.oss_name in \
+                job_stat_info_item.oss_stat_item_dict:
 
                 oss_stat_item = \
-                    OSSStatItem(
-                        jobstat_item.oss_name, 
-                        read_samples, 
-                        write_samples)
-
-                job_id = jobstat_item.job_id
-
-                if job_id in job_stat_info_item_dict:
-
-                    job_stat_info_item = job_stat_info_item_dict[job_id]
-
-                    if oss_stat_item.oss_name in \
-                        job_stat_info_item.oss_stat_item_dict:
-
-                        oss_stat_item = \
-                            job_stat_info_item.oss_stat_item_dict[ \
-                                oss_stat_item.oss_name]
-
-                        if read_samples is not None:
-                            oss_stat_item.read_samples = read_samples
-                        if write_samples is not None:
-                            oss_stat_item.write_samples = write_samples
-
-                    else:
-                        job_stat_info_item.oss_stat_item_dict[ \
-                            oss_stat_item.oss_name] = oss_stat_item
-
-                else:
-
-                    job_stat_info_item = JobStatInfoItem(job_id)
-
                     job_stat_info_item.oss_stat_item_dict[ \
-                        oss_stat_item.oss_name] = oss_stat_item
+                        oss_stat_item.oss_name]
 
-                    job_stat_info_item_dict[job_id] = job_stat_info_item
+                if read_samples is not None:
+                    oss_stat_item.read_samples = read_samples
 
-            return job_stat_info_item_dict
+                if write_samples is not None:
+                    oss_stat_item.write_samples = write_samples
 
-    else:
-        raise RuntimeError('No jobstat file found for further processing!')
+            else:
+
+                job_stat_info_item.oss_stat_item_dict[ \
+                    oss_stat_item.oss_name] = oss_stat_item
+
+        else:
+
+            job_stat_info_item = JobStatInfoItem(job_id)
+
+            job_stat_info_item.oss_stat_item_dict[ \
+                oss_stat_item.oss_name] = oss_stat_item
+
+            job_stat_info_item_dict[job_id] = job_stat_info_item
+
+    return job_stat_info_item_dict
 
 
 class SQueueInfoItem:
@@ -216,8 +211,8 @@ def create_squeue_info_item(squeue_line):
     if len(squeue_info_item_fields) != 6:
         raise RuntimeError("Invalid number of fields: %s" % squeue_line)
 
-    base_job_id = int(squeue_info_item_fields[0])
-    job_id = int(squeue_info_item_fields[1])
+    base_job_id = squeue_info_item_fields[0]
+    job_id = squeue_info_item_fields[1]
     user = squeue_info_item_fields[2]
     group = squeue_info_item_fields[3]
     node = squeue_info_item_fields[4]
@@ -231,6 +226,8 @@ def create_squeue_info_list(args, job_id_list):
     # TODO: Check count of job ids and maybe split the list for 
     #       multiple squeue calls to do not overloading the SLURM controller!
     len_job_id_list = len(job_id_list)
+
+    logging.info("job_id_list: %s" % job_id_list)
 
     job_id_csv = ''
 
@@ -275,7 +272,7 @@ class JobInfoItem:
 
     def to_string(self):
 
-        output_string = str(self.job_id) + "|" + \
+        output_string = self.job_id + "|" + \
                         self.user + "|" + \
                         self.group + "|" + \
                         self.command + "|"
@@ -333,14 +330,6 @@ def init_arg_parser():
         type=int, required=True,
         help='Minimum number of read or write Lustre jobstats sample count.')
 
-    parser.add_argument('-j', '--path-jobstat-file', dest='path_jobstats_file',
-        type=str, required=True,
-        help='Specifies path to save Lustre jobstats file.')
-
-    parser.add_argument('-C', '--create-jobstats-file', dest='create_jobstats_file', 
-        required=False, action='store_true',
-        help='Specifies if a new Lustre jobstats file should be created.')
-
     return parser.parse_args()
 
 
@@ -370,17 +359,13 @@ def main():
         logging.info("Looking for Minimum Sample Count in Jobs: %s" %
             args.min_samples)
 
-        logging.info("Creating Lustre Jobstats File: %s",
-            args.create_jobstats_file)
+        jobstat_lines = create_jobstat_lines(args)
 
-        logging.info("Path for Lustre Jobstat File: %s",
-            args.path_jobstats_file)
+        if not jobstat_lines:
+            logging.info("Empty jobstat list retrieved - Nothing to do!")
+            os._exit(0)
 
-        if args.create_jobstats_file:
-            create_job_stats_file(args)
-
-        job_stat_info_item_dict = \
-            create_job_stat_info_item_dict(args.path_jobstats_file)
+        job_stat_info_item_dict = create_job_stat_info_item_dict(jobstat_lines)
 
         len_job_stat_info_item_dict = len(job_stat_info_item_dict)
 
@@ -446,7 +431,7 @@ def main():
         exc_type, exc_obj, exc_tb = sys.exc_info()
         filename = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 
-        logging.error("Caught exception in main function: %s - %s (line: %s)" %
+        logging.error("Caught exception:\n%s - %s (line: %s)" %
             (str(e), filename, exc_tb.tb_lineno))
 
         os._exit(1)
