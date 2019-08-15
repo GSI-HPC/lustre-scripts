@@ -225,38 +225,28 @@ def create_squeue_info_list(args, job_id_list):
 
     # TODO: Check count of job ids and maybe split the list for 
     #       multiple squeue calls to do not overloading the SLURM controller!
-    len_job_id_list = len(job_id_list)
+    
+    if not job_id_list:
+        raise RuntimeError('job_id_list should not be empty!')
 
-    logging.info("job_id_list: %s" % job_id_list)
+    job_id_csv_list = ','.join(job_id_list)
 
-    job_id_csv = ''
+    logging.debug('Querying SLURM scheduling queue...')
 
-    if len_job_id_list > 0:
+    logging.info("job_id_list: %s" % job_id_csv_list)
 
-        job_id_csv = str(job_id_list[0])
+    squeue_call = \
+        "squeue --noheader --sort 'i' --format '%F|%A|%u|%g|%N|%o' -j " \
+            + job_id_csv_list
 
-        if len_job_id_list > 1:
+    logging.debug(squeue_call)
 
-            for i in xrange(1, len_job_id_list):
-                job_id_csv += ',' + str(job_id_list[i])
+    user_at_host = args.user + '@' + args.client_node
 
-        if job_id_csv == '':
-            raise RuntimeError('job_id_csv should not be empty!')
+    squeue_output = subprocess.check_output(
+        ['ssh', user_at_host, squeue_call], stderr=subprocess.STDOUT)
 
-        logging.debug('Querying SLURM scheduling queue...')
-
-        squeue_call = \
-            "squeue --noheader --sort 'i' --format '%F|%A|%u|%g|%N|%o' -j " \
-                + job_id_csv
-
-        logging.debug(squeue_call)
-
-        user_at_host = args.user + '@' + args.client_node
-
-        squeue_output = subprocess.check_output(
-            ['ssh', user_at_host, squeue_call], stderr=subprocess.STDOUT)
-
-        return squeue_output.lstrip().splitlines()
+    return squeue_output.lstrip().splitlines()
 
 
 class JobInfoItem:
