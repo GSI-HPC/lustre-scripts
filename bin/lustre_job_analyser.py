@@ -132,52 +132,61 @@ def create_job_stat_info_item_dict(jobstat_lines):
 
         jobstat_item = create_jobstat_item(jobstat_line)
 
-        read_samples, write_samples = None, None
+        if jobstat_item.job_id.isdigit():
 
-        if jobstat_item.operation_type == 'read':
-            read_samples = jobstat_item.sample_count
+            read_samples, write_samples = None, None
 
-        if jobstat_item.operation_type == 'write':
-            write_samples = jobstat_item.sample_count
+            if jobstat_item.operation_type == 'read':
+                read_samples = jobstat_item.sample_count
 
-        oss_stat_item = \
-            OSSStatItem(
-                jobstat_item.oss_name, 
-                read_samples, 
-                write_samples)
+            if jobstat_item.operation_type == 'write':
+                write_samples = jobstat_item.sample_count
 
-        job_id = jobstat_item.job_id
+            oss_stat_item = \
+                OSSStatItem(
+                    jobstat_item.oss_name, 
+                    read_samples, 
+                    write_samples)
 
-        if job_id in job_stat_info_item_dict:
+            job_id = jobstat_item.job_id
 
-            job_stat_info_item = job_stat_info_item_dict[job_id]
+            if job_id in job_stat_info_item_dict:
 
-            if oss_stat_item.oss_name in \
-                job_stat_info_item.oss_stat_item_dict:
+                job_stat_info_item = job_stat_info_item_dict[job_id]
 
-                oss_stat_item = \
+                if oss_stat_item.oss_name in \
+                    job_stat_info_item.oss_stat_item_dict:
+
+                    oss_stat_item = \
+                        job_stat_info_item.oss_stat_item_dict[ \
+                            oss_stat_item.oss_name]
+
+                    if read_samples is not None:
+                        oss_stat_item.read_samples = read_samples
+
+                    if write_samples is not None:
+                        oss_stat_item.write_samples = write_samples
+
+                else:
+
                     job_stat_info_item.oss_stat_item_dict[ \
-                        oss_stat_item.oss_name]
-
-                if read_samples is not None:
-                    oss_stat_item.read_samples = read_samples
-
-                if write_samples is not None:
-                    oss_stat_item.write_samples = write_samples
+                        oss_stat_item.oss_name] = oss_stat_item
 
             else:
+
+                job_stat_info_item = JobStatInfoItem(job_id)
 
                 job_stat_info_item.oss_stat_item_dict[ \
                     oss_stat_item.oss_name] = oss_stat_item
 
+                job_stat_info_item_dict[job_id] = job_stat_info_item
+
         else:
 
-            job_stat_info_item = JobStatInfoItem(job_id)
+            logging.debug("Ignoring non digit Job-ID: '%s'" % \
+                jobstat_item.job_id)
 
-            job_stat_info_item.oss_stat_item_dict[ \
-                oss_stat_item.oss_name] = oss_stat_item
-
-            job_stat_info_item_dict[job_id] = job_stat_info_item
+            continue
 
     return job_stat_info_item_dict
 
@@ -232,8 +241,6 @@ def create_squeue_info_list(args, job_id_list):
     job_id_csv_list = ','.join(job_id_list)
 
     logging.debug('Querying SLURM scheduling queue...')
-
-    logging.info("job_id_list: %s" % job_id_csv_list)
 
     squeue_call = \
         "squeue --noheader --sort 'i' --format '%F|%A|%u|%g|%N|%o' -j " \
@@ -344,15 +351,15 @@ def main():
 
         logging.debug('START')
 
-        logging.info('Checking OSS Nodes: %s' % args.oss_nodes)
+        logging.debug('Checking OSS Nodes: %s' % args.oss_nodes)
 
-        logging.info("Looking for Minimum Sample Count in Jobs: %s" %
+        logging.debug("Looking for Minimum Sample Count in Jobs: %s" %
             args.min_samples)
 
         jobstat_lines = create_jobstat_lines(args)
 
         if not jobstat_lines:
-            logging.info("Empty jobstat list retrieved - Nothing to do!")
+            logging.debug("Empty jobstat list retrieved - Nothing to do!")
             os._exit(0)
 
         job_stat_info_item_dict = create_job_stat_info_item_dict(jobstat_lines)
