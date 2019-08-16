@@ -52,10 +52,8 @@ def create_jobstat_lines(args):
 
     for jobstat_line in jobstats_output_lines:
 
+        jobstat_lines.append(jobstat_line)
         logging.debug("Jobstat line: %s" % jobstat_line)
-
-        if create_jobstat_item(jobstat_line):
-            jobstat_lines.append(jobstat_line + "\n")
 
     return jobstat_lines
 
@@ -83,8 +81,6 @@ def create_jobstat_item(jobstat_line):
             jobstat_item_fields[3] != 'has' or \
             jobstat_item_fields[4] != 'done' or \
             jobstat_item_fields[7] != 'operations.':
-
-        logging.debug("Skipping jobstat line: '%s'." % jobstat_line)
 
         return None
 
@@ -132,61 +128,61 @@ def create_job_stat_info_item_dict(jobstat_lines):
 
         jobstat_item = create_jobstat_item(jobstat_line)
 
-        if jobstat_item.job_id.isdigit():
+        if not jobstat_item:
+            logging.debug("Skipping jobstat line: '%s'" % jobstat_line)
+            continue
 
-            read_samples, write_samples = None, None
+        if not jobstat_item.job_id.isdigit():
+            logging.debug("Ignoring non digit Job-ID: '%s'" % job_id)
+            continue
 
-            if jobstat_item.operation_type == 'read':
-                read_samples = jobstat_item.sample_count
+        # Continue with job id that consists just of digits...
+        job_id = jobstat_item.job_id
 
-            if jobstat_item.operation_type == 'write':
-                write_samples = jobstat_item.sample_count
+        read_samples, write_samples = None, None
 
-            oss_stat_item = \
-                OSSStatItem(
-                    jobstat_item.oss_name, 
-                    read_samples, 
-                    write_samples)
+        if jobstat_item.operation_type == 'read':
+            read_samples = jobstat_item.sample_count
 
-            job_id = jobstat_item.job_id
+        if jobstat_item.operation_type == 'write':
+            write_samples = jobstat_item.sample_count
 
-            if job_id in job_stat_info_item_dict:
+        oss_stat_item = \
+            OSSStatItem(
+                jobstat_item.oss_name, 
+                read_samples, 
+                write_samples)
 
-                job_stat_info_item = job_stat_info_item_dict[job_id]
+        if job_id in job_stat_info_item_dict:
 
-                if oss_stat_item.oss_name in \
-                    job_stat_info_item.oss_stat_item_dict:
+            job_stat_info_item = job_stat_info_item_dict[job_id]
 
-                    oss_stat_item = \
-                        job_stat_info_item.oss_stat_item_dict[ \
-                            oss_stat_item.oss_name]
+            if oss_stat_item.oss_name in \
+                job_stat_info_item.oss_stat_item_dict:
 
-                    if read_samples is not None:
-                        oss_stat_item.read_samples = read_samples
-
-                    if write_samples is not None:
-                        oss_stat_item.write_samples = write_samples
-
-                else:
-
+                oss_stat_item = \
                     job_stat_info_item.oss_stat_item_dict[ \
-                        oss_stat_item.oss_name] = oss_stat_item
+                        oss_stat_item.oss_name]
+
+                if read_samples is not None:
+                    oss_stat_item.read_samples = read_samples
+
+                if write_samples is not None:
+                    oss_stat_item.write_samples = write_samples
 
             else:
-
-                job_stat_info_item = JobStatInfoItem(job_id)
 
                 job_stat_info_item.oss_stat_item_dict[ \
                     oss_stat_item.oss_name] = oss_stat_item
 
-                job_stat_info_item_dict[job_id] = job_stat_info_item
-
         else:
 
-            logging.debug("Ignoring non digit Job-ID: '%s'" % \
-                jobstat_item.job_id)
+            job_stat_info_item = JobStatInfoItem(job_id)
 
-            continue
+            job_stat_info_item.oss_stat_item_dict[ \
+                oss_stat_item.oss_name] = oss_stat_item
+
+            job_stat_info_item_dict[job_id] = job_stat_info_item
 
     return job_stat_info_item_dict
 
