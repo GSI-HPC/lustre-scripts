@@ -22,20 +22,19 @@ import sys
 
 class MinimalPython(int, Enum):
 
+    # See: https://docs.python.org/3/c-api/apiabiversion.html#apiabiversion
     MAJOR = 3
     MINOR = 6
     MICRO = 8
-
-    # See: https://docs.python.org/3/c-api/apiabiversion.html#apiabiversion
     FINAL_RELEASE_LEVEL = 240 # 0xF0
 
-    def check():
+    def check(major=MAJOR, minor=MINOR, micro=MICRO, final=FINAL_RELEASE_LEVEL):
 
-        build_hexversion = '0x'
-        build_hexversion += format(MinimalPython.MAJOR, '02x') \
-                          + format(MinimalPython.MINOR, '02x') \
-                          + format(MinimalPython.MICRO, '02x') \
-                          + format(MinimalPython.FINAL_RELEASE_LEVEL, '02x')
+        build_hexversion = '0x' \
+                            + format(major, '02x') \
+                            + format(minor, '02x') \
+                            + format(micro, '02x') \
+                            + format(final, '02x')
 
         hexversion = int(build_hexversion, 16)
 
@@ -47,9 +46,9 @@ class MinimalPython(int, Enum):
                             f"{sys.version_info.releaselevel}"
 
             error = f"Not supported Python version found: {found_version}" \
-                    f" - Minimal version required: {MinimalPython.version()}"
+                    f" - Minimal version required: {MinimalPython._version(major, minor, micro)}"
 
             raise RuntimeError(error)
 
-    def version() -> str:
-        return f"{MinimalPython.MAJOR}.{MinimalPython.MINOR}.{MinimalPython.MICRO}-final"
+    def _version(major, minor, micro) -> str:
+        return f"{major}.{minor}.{micro}-final"
