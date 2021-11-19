@@ -1,3 +1,4 @@
 .idea
 bin/lustre_jobstats_file.unl
 *.pyc
+*.vscode
