@@ -29,7 +29,7 @@ DEFAULT_WORK_DIR = '.'
 HELP_FILENAME_PATTERN = "file_class_ost{INDEX}"
 
 REGEX_STR_RBH_UNL_HEADER = r"^\s*type,\s*size,\s*path,\s*stripe_cnt,\s*stripe_size,\s*pool,\s*stripes,\s*data_on_ost(\d+)$"
-REGEX_STR_RBH_UNL_BODY = r"^\s*file,[^,]+,\s*([^,]+),[^,]+,[^,]+,[^,]+,[^,]+,[^,]+$"
+REGEX_STR_RBH_UNL_BODY = r"^\s*file,[^,]+,\s*([^,]+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[^,]+$"
 REGEX_PATTERN_RBH_UNL_HEADER = re.compile(REGEX_STR_RBH_UNL_HEADER)
 REGEX_PATTERN_RBH_UNL_BODY = re.compile(REGEX_STR_RBH_UNL_BODY)
 
