@@ -19,11 +19,8 @@
 import re
 import argparse
 import logging
-import time
 import os.path
 
-from pathlib import Path
-from posixpath import basename
 from lib.clush.RangeSet import RangeSet
 from lib.version.minimal_python import MinimalPython
 
@@ -50,9 +47,10 @@ def main():
     MinimalPython.check()
 
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('-e', '--filename-ext', dest='filename_ext', default=DEFAULT_FILENAME_EXT, type=str, required=False, help=f"Default: {DEFAULT_FILENAME_EXT}")
+    parser.add_argument('-e', '--filename-ext', dest='filename_ext', type=str, required=False, default=DEFAULT_FILENAME_EXT, help=f"Default: {DEFAULT_FILENAME_EXT}")
     parser.add_argument('-f', '--filename-pattern', dest='filename_pattern', type=str, required=False, help=f"For instance: {HELP_FILENAME_PATTERN}")
     parser.add_argument('-i', '--ost-indexes', dest='ost_indexes', type=str, required=False, help='')
+    parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='')
     parser.add_argument('-w', '--work-dir', dest='work_dir', default=DEFAULT_WORK_DIR, type=str, required=False, help=f"Default: '{DEFAULT_WORK_DIR}'")
     parser.add_argument('-D', '--enable-debug', dest='enable_debug', required=False, action='store_true', help='Enables logging of debug messages.')
 
@@ -82,6 +80,9 @@ def main():
             if filename.endswith(args.filename_ext):
                 unload_files.append(os.path.join(args.work_dir, filename))
 
+    if args.split_index < 1 or args.split_index > 10:
+        raise RuntimeError(f"Not supported split index: {args.split_index} - Must be between 1 and 10.")
+
     if len(unload_files):
         logging.info(len(unload_files))
     else:
@@ -95,6 +96,9 @@ def main():
         input_file = os.path.join(args.work_dir, os.path.basename(unload_file).split('.', 1)[0] + '.input')
 
         logging.info(f"Creating input file: {input_file}")
+
+        split_counter = 1
+        split_index = args.split_index
 
         with open(unload_file, 'rb') as reader:
             with open(input_file, 'w') as writer:
@@ -111,6 +115,13 @@ def main():
                         if not matched:
                             logging.error(f"No regex match for line: {line}")
                             continue
+
+                        if split_index > 1:
+                            if split_counter != split_index:
+                                split_counter += 1
+                                continue
+                            else:
+                                split_counter = 1
 
                         filepath = matched.group(1)
                         has_spaces = filepath.find(' ')
