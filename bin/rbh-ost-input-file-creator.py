@@ -106,9 +106,15 @@ def main():
                 for raw_line in reader:
 
                     matched = None
-
+                    line = None
                     line_number += 1
-                    line = raw_line.decode(errors='ignore')
+
+                    try:
+                        line = raw_line.decode(errors='strict')
+                    except UnicodeDecodeError as err:
+                        line = raw_line.decode(errors='replace')
+                        logging.error(f"Decoding failed for line ({line_number}): {line}")
+                        continue
 
                     if found_header:
 
