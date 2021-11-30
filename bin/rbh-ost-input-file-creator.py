@@ -28,10 +28,12 @@ DEFAULT_FILENAME_EXT = '.unl'
 DEFAULT_WORK_DIR = '.'
 HELP_FILENAME_PATTERN = "file_class_ost{INDEX}"
 
-REGEX_STR_RBH_UNL_HEADER = r"^\s*type,\s*size,\s*path,\s*stripe_cnt,\s*stripe_size,\s*pool,\s*stripes,\s*data_on_ost(\d+)$"
-REGEX_STR_RBH_UNL_BODY = r"^\s*file,[^,]+,\s*(.+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[^,]+$"
-REGEX_PATTERN_RBH_UNL_HEADER = re.compile(REGEX_STR_RBH_UNL_HEADER)
-REGEX_PATTERN_RBH_UNL_BODY = re.compile(REGEX_STR_RBH_UNL_BODY)
+REGEX_STR_HEADER = r"^\s*type,\s*size,\s*path,\s*stripe_cnt,\s*stripe_size,\s*pool,\s*stripes,\s*data_on_ost(\d+)$"
+REGEX_STR_BODY = r"^\s*file,[^,]+,\s*(.+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[^,]+$"
+REGEX_STR_SPECIAL_CHAR = r"([\s()])"
+REGEX_PATTERN_HEADER = re.compile(REGEX_STR_HEADER)
+REGEX_PATTERN_BODY = re.compile(REGEX_STR_BODY)
+REGEX_PATTERN_SPECIAL_CHAR = re.compile(REGEX_STR_SPECIAL_CHAR)
 
 def init_logging(log_filename, enable_debug):
 
@@ -44,6 +46,10 @@ def init_logging(log_filename, enable_debug):
         logging.basicConfig(filename=log_filename, level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
     else:
         logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
+
+def escape_match(match):
+    print(match)
+    return "$"
 
 def main():
 
@@ -102,13 +108,11 @@ def main():
 
     for unload_file in unload_files:
 
-        found_header = False
-        ost_index = None
-
         input_file = os.path.join(args.work_dir, os.path.basename(unload_file).split('.', 1)[0] + '.input')
-
         logging.info(f"Creating input file: {input_file}")
 
+        found_header = False
+        ost_index = None
         line_number = 0
         split_counter = 1
         split_index = args.split_index
@@ -130,7 +134,7 @@ def main():
 
                     if found_header:
 
-                        matched = REGEX_PATTERN_RBH_UNL_BODY.match(line)
+                        matched = REGEX_PATTERN_BODY.match(line)
 
                         if not matched:
                             logging.error(f"No regex match for line ({line_number}): {line}")
@@ -144,14 +148,13 @@ def main():
                                 split_counter = 1
 
                         filepath = matched.group(1)
-                        has_spaces = filepath.find(' ')
 
-                        if has_spaces > 0:
-                            logging.warning(f"Found whitespaces in line - Skipped line: {filepath}")
-                        else:
-                            writer.write(ost_index + ' ' + filepath + '\n')
+                        if REGEX_PATTERN_SPECIAL_CHAR.search(filepath):
+                            filepath = re.escape(filepath)
+
+                        writer.write(ost_index + ' ' + filepath + '\n')
                     else:
-                        matched = REGEX_PATTERN_RBH_UNL_HEADER.match(line)
+                        matched = REGEX_PATTERN_HEADER.match(line)
 
                         if matched:
                             found_header = True
