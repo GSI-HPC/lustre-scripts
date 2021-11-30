@@ -33,14 +33,17 @@ REGEX_STR_RBH_UNL_BODY = r"^\s*file,[^,]+,\s*(.+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[
 REGEX_PATTERN_RBH_UNL_HEADER = re.compile(REGEX_STR_RBH_UNL_HEADER)
 REGEX_PATTERN_RBH_UNL_BODY = re.compile(REGEX_STR_RBH_UNL_BODY)
 
-def init_logging(enable_debug):
+def init_logging(log_filename, enable_debug):
 
     if enable_debug:
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
 
-    logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
+    if log_filename:
+        logging.basicConfig(filename=log_filename, level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
+    else:
+        logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
 
 def main():
 
@@ -53,11 +56,12 @@ def main():
     parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='')
     parser.add_argument('-w', '--work-dir', dest='work_dir', default=DEFAULT_WORK_DIR, type=str, required=False, help=f"Default: '{DEFAULT_WORK_DIR}'")
     parser.add_argument('-x', '--exact-filename', dest='exact_filename', type=str, required=False, help="Explicit filename to process.")
+    parser.add_argument('-l', '--log-file', dest='log_file', type=str, required=False, help='Specifies logging file.')
     parser.add_argument('-D', '--enable-debug', dest='enable_debug', required=False, action='store_true', help='Enables logging of debug messages.')
 
     args = parser.parse_args()
 
-    init_logging(args.enable_debug)
+    init_logging(args.log_file, args.enable_debug)
 
     unload_files = list()
 
