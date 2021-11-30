@@ -47,10 +47,6 @@ def init_logging(log_filename, enable_debug):
     else:
         logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
 
-def escape_match(match):
-    print(match)
-    return "$"
-
 def main():
 
     MinimalPython.check()
