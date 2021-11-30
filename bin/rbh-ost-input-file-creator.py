@@ -98,8 +98,6 @@ def main():
         raise RuntimeError(f"Not supported split index: {args.split_index} - Must be between 1 and 10.")
 
     if not unload_files:
-        logging.info(len(unload_files))
-    else:
         logging.info('No unload files have been found.')
 
     for unload_file in unload_files:
