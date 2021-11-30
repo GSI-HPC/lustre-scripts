@@ -55,7 +55,7 @@ def main():
     parser.add_argument('-i', '--ost-indexes', dest='ost_indexes', type=str, required=False, help='')
     parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='')
     parser.add_argument('-w', '--work-dir', dest='work_dir', default=DEFAULT_WORK_DIR, type=str, required=False, help=f"Default: '{DEFAULT_WORK_DIR}'")
-    parser.add_argument('-x', '--exact-filename', dest='exact_filename', type=str, required=False, help="Explicit filename to process.")
+    parser.add_argument('-x', '--exact-filename', dest='exact_filename', type=str, required=False, help='Explicit filename to process.')
     parser.add_argument('-l', '--log-file', dest='log_file', type=str, required=False, help='Specifies logging file.')
     parser.add_argument('-D', '--enable-debug', dest='enable_debug', required=False, action='store_true', help='Enables logging of debug messages.')
 
@@ -78,7 +78,7 @@ def main():
     elif args.ost_indexes:
 
         if not '{INDEX}' in args.filename_pattern:
-            raise RuntimeError('{INDEX} field must be contained in the filename-pattern argument.')
+            raise RuntimeError("{INDEX} field must be contained in the filename-pattern argument.")
 
         for index in list(RangeSet(args.ost_indexes).striter()):
             filename = args.filename_pattern.replace('{INDEX}', index, 1) + args.filename_ext
@@ -147,7 +147,7 @@ def main():
                         has_spaces = filepath.find(' ')
 
                         if has_spaces > 0:
-                            logging.debug(f"Found whitespaces in line - Skipped line: {filepath}")
+                            logging.warning(f"Found whitespaces in line - Skipped line: {filepath}")
                         else:
                             writer.write(ost_index + ' ' + filepath + '\n')
                     else:
