@@ -101,7 +101,7 @@ def main():
     if args.split_index < 1 or args.split_index > 10:
         raise RuntimeError(f"Not supported split index: {args.split_index} - Must be between 1 and 10.")
 
-    if len(unload_files):
+    if not unload_files:
         logging.info(len(unload_files))
     else:
         logging.info('No unload files have been found.')
@@ -109,7 +109,7 @@ def main():
     for unload_file in unload_files:
 
         input_file = os.path.join(args.work_dir, os.path.basename(unload_file).split('.', 1)[0] + '.input')
-        logging.info(f"Creating input file: {input_file}")
+        logging.info("Creating input file: %s", input_file)
 
         found_header = False
         ost_index = None
@@ -127,9 +127,9 @@ def main():
 
                     try:
                         line = raw_line.decode(errors='strict')
-                    except UnicodeDecodeError as err:
+                    except UnicodeDecodeError:
                         line = raw_line.decode(errors='replace')
-                        logging.error(f"Decoding failed for line ({line_number}): {line}")
+                        logging.error("Decoding failed for line (%i): %s", line_number, line)
                         continue
 
                     if found_header:
@@ -137,15 +137,14 @@ def main():
                         matched = REGEX_PATTERN_BODY.match(line)
 
                         if not matched:
-                            logging.error(f"No regex match for line ({line_number}): {line}")
+                            logging.error("No regex match for line (%i): %s", line_number, line)
                             continue
 
                         if split_index > 1:
                             if split_counter != split_index:
                                 split_counter += 1
                                 continue
-                            else:
-                                split_counter = 1
+                            split_counter = 1
 
                         filepath = matched.group(1)
 
@@ -161,7 +160,7 @@ def main():
                             ost_index = matched.group(1)
 
         if not found_header:
-            logging.error(f"No header found - Failed processing unload file: {unload_file}")
+            logging.error("No header found - Failed processing unload file: %s", unload_file)
 
 if __name__ == '__main__':
     main()
