@@ -30,10 +30,8 @@ HELP_FILENAME_PATTERN = "file_class_ost{INDEX}"
 
 REGEX_STR_HEADER = r"^\s*type,\s*size,\s*path,\s*stripe_cnt,\s*stripe_size,\s*pool,\s*stripes,\s*data_on_ost(\d+)$"
 REGEX_STR_BODY = r"^\s*file,[^,]+,\s*(.+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[^,]+$"
-REGEX_STR_SPECIAL_CHAR = r"([\s()])"
 REGEX_PATTERN_HEADER = re.compile(REGEX_STR_HEADER)
 REGEX_PATTERN_BODY = re.compile(REGEX_STR_BODY)
-REGEX_PATTERN_SPECIAL_CHAR = re.compile(REGEX_STR_SPECIAL_CHAR)
 
 def init_logging(log_filename, enable_debug):
 
@@ -140,12 +138,7 @@ def main():
                                 continue
                             split_counter = 1
 
-                        filepath = matched.group(1)
-
-                        if REGEX_PATTERN_SPECIAL_CHAR.search(filepath):
-                            filepath = re.escape(filepath)
-
-                        writer.write(ost_index + ' ' + filepath + '\n')
+                        writer.write(ost_index + ' ' + matched.group(1) + '\n')
                     else:
                         matched = REGEX_PATTERN_HEADER.match(line)
 
