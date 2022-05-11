@@ -11,7 +11,7 @@ __Requisites:__
 
 * Enabled Lustre job stats.
 * _ClusterShell_ - For executing remote commands in parallel from a workstation on the cluster.
-* _show_high_jobstats.pl_ - Perl script to collect and filter queried jobstats from Lustre OSS  
+* _show_high_jobstats.pl_ - Perl script to collect and filter queried jobstats from Lustre OSS
 (https://www.scc.kit.edu/scc/sw/lustre_tools/show_high_jobstats.tgz).
 * _slurm-client_ - Squeue command to query Slurm information about jobs.
 
@@ -31,16 +31,16 @@ lustre_job_analyser.py -s file_server[000-100] -n client_node0200 -u admin_user 
 
 __Output Schema:__
 
-SLURM_JOB_ID|USER|GROUP|EXECUTABLE|CLIENT_NODE_LIST|FILE_SERVER_LIST  
-...  
-SLURM_JOB_ID|USER|GROUP|EXECUTABLE|CLIENT_NODE_LIST|FILE_SERVER_LIST  
+SLURM_JOB_ID|USER|GROUP|EXECUTABLE|CLIENT_NODE_LIST|FILE_SERVER_LIST
+...
+SLURM_JOB_ID|USER|GROUP|EXECUTABLE|CLIENT_NODE_LIST|FILE_SERVER_LIST
 
 ## Lustre Collect Changelog Indexes
 
 __Description:__
 
-This script collects changelog indexes from a Lustre MDT.  
-It can be executed continuously or just in a capture mode.  
+This script collects changelog indexes from a Lustre MDT.
+It can be executed continuously or just in a capture mode.
 
 for displaying the delta between the Lustre changelog index and the specified changelog reader index.
 
@@ -68,19 +68,19 @@ lustre_collect_changelog_indexes.py -m fs-MDT0000 -r cl1 --capture-delta
 
 __Output Schema:__
 
-In Continuous Collect Mode:  
+In Continuous Collect Mode:
 * TIMESTAMP;
 * MDT CHANGELOG INDEX PRODUCER COUNT;
 * CHANGELOG READER INDEX CONSUMER COUNT;
 * DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
 
-In Capture Delta Mode:  
+In Capture Delta Mode:
 DELTA BETWEEN CHANGELOG READER INDEX AND MDT CHANGELOG INDEX
 
 
 ## Lustre Storage Report
 
- !!! DEPRECATED!!!,  
+ !!! DEPRECATED!!!
  since the project has been completely recreated for GSI HPC internal use in terms of a storage reporting tool.
 
 __Description:__
@@ -154,7 +154,7 @@ __Schema of the Accounting History Table:__
 
 ### rbh-acct-report.py
 
- !!! DEPRECATED!!!,  
+ !!! DEPRECATED!!!
  since the project has been completely recreated for GSI HPC internal use in terms of a storage reporting tool.
 
 __Description:__
@@ -317,3 +317,50 @@ Please check if you really need those files stored on the file system.
 
 ...
 ```
+
+## Robinhood Unload Processing Tool
+
+Script: `rbh-ost-file-map-creator.py`
+
+__Description:__
+
+Creates mapping files between start OST index and filepath based on Robinhood unloads generated with rbh-report.
+
+This tool is used to create input files for file migration on Lustre with the [Cyclone Framework](https://github.com/GSI-HPC/cyclone-distributed-task-driven-framework).
+
+__Script Parameter:__
+
+```
+options:
+  -h, --help            show this help message and exit
+  -e FILENAME_EXT, --filename-ext FILENAME_EXT
+                        Default: .unl
+  -f FILENAME_PATTERN, --filename-pattern FILENAME_PATTERN
+                        For instance: file_class_ost{INDEX}, where {INDEX} is a placeholder for the OST index.
+  -i OST_INDEXES, --ost-indexes OST_INDEXES
+                        Defines a RangeSet for the OST indexes e.g. 0-30,75,87-103
+  -s SPLIT_INDEX, --split-index SPLIT_INDEX
+                        Default: 1
+  -w WORK_DIR, --work-dir WORK_DIR
+                        Default: '.'
+  -x EXACT_FILENAME, --exact-filename EXACT_FILENAME
+                        Explicit filename to process.
+  -l LOG_FILE, --log-file LOG_FILE
+                        Specifies logging file.
+  -D, --enable-debug    Enables logging of debug messages.
+```
+
+__Usage of rbh-report:__
+
+The following creates the unload files with `rbh-report`:
+
+```
+FILE_CLASS=XXX
+
+for i in {280..310}
+do
+    rbh-report --dump-ost ${i} --filter-class=${FILE_CLASS} --csv > ${FILE_CLASS}_ost${i}.unl &
+done
+```
+
+The unload files must be created in CSV format and with header.

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright 2021 Gabriele Iannetti <g.iannetti@gsi.de>
+# Copyright 2022 Gabriele Iannetti <g.iannetti@gsi.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,11 +49,11 @@ def main():
 
     MinimalPython.check()
 
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description='Creates mapping files between start OST index and filepath based on Robinhood unloads generated with rbh-report.')
     parser.add_argument('-e', '--filename-ext', dest='filename_ext', type=str, required=False, default=DEFAULT_FILENAME_EXT, help=f"Default: {DEFAULT_FILENAME_EXT}")
-    parser.add_argument('-f', '--filename-pattern', dest='filename_pattern', type=str, required=False, help=f"For instance: {HELP_FILENAME_PATTERN}")
-    parser.add_argument('-i', '--ost-indexes', dest='ost_indexes', type=str, required=False, help='')
-    parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='')
+    parser.add_argument('-f', '--filename-pattern', dest='filename_pattern', type=str, required=False, help=f"For instance: {HELP_FILENAME_PATTERN}, where {{INDEX}} is a placeholder for the OST index.")
+    parser.add_argument('-i', '--ost-indexes', dest='ost_indexes', type=str, required=False, help='Defines a RangeSet for the OST indexes e.g. 0-30,75,87-103')
+    parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='Default: 1')
     parser.add_argument('-w', '--work-dir', dest='work_dir', default=DEFAULT_WORK_DIR, type=str, required=False, help=f"Default: '{DEFAULT_WORK_DIR}'")
     parser.add_argument('-x', '--exact-filename', dest='exact_filename', type=str, required=False, help='Explicit filename to process.')
     parser.add_argument('-l', '--log-file', dest='log_file', type=str, required=False, help='Specifies logging file.')
@@ -125,6 +125,9 @@ def main():
                         continue
 
                     if found_header:
+
+                        if not line.strip():
+                            continue
 
                         matched = REGEX_PATTERN_BODY.match(line)
 
