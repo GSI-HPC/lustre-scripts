@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 #  disk_usage_info.py
-#  
+#
 #  Gabriele Iannetti <g.iannetti@gsi.de>
 
 import logging
