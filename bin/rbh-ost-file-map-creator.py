@@ -21,8 +21,12 @@ import argparse
 import logging
 import os.path
 
+from datetime import datetime
+
 from lib.clush.RangeSet import RangeSet
 from lib.version.minimal_python import MinimalPython
+
+
 
 DEFAULT_FILENAME_EXT = '.unl'
 DEFAULT_WORK_DIR = '.'
@@ -30,8 +34,10 @@ HELP_FILENAME_PATTERN = "file_class_ost{INDEX}"
 
 REGEX_STR_HEADER = r"^\s*type,\s*size,\s*path,\s*stripe_cnt,\s*stripe_size,\s*pool,\s*stripes,\s*data_on_ost(\d+)$"
 REGEX_STR_BODY = r"^\s*file,[^,]+,\s*(.+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[^,]+$"
+REGEX_STR_TAIL = r"^Total: \d+ entries, \d+ bytes .*$"
 REGEX_PATTERN_HEADER = re.compile(REGEX_STR_HEADER)
 REGEX_PATTERN_BODY = re.compile(REGEX_STR_BODY)
+REGEX_PATTERN_TAIL = re.compile(REGEX_STR_TAIL)
 
 def init_logging(log_filename, enable_debug):
 
@@ -63,7 +69,7 @@ def main():
 
     init_logging(args.log_file, args.enable_debug)
 
-    unload_files = list()
+    unload_files = []
 
     if (args.filename_pattern and not args.ost_indexes) or (args.ost_indexes and not args.filename_pattern):
         raise RuntimeError('If any of filename-pattern or ost-indexes is set, both must be set.')
@@ -77,7 +83,7 @@ def main():
 
     elif args.ost_indexes:
 
-        if not '{INDEX}' in args.filename_pattern:
+        if not "{INDEX}" in args.filename_pattern:
             raise RuntimeError("{INDEX} field must be contained in the filename-pattern argument.")
 
         for index in list(RangeSet(args.ost_indexes).striter()):
@@ -104,13 +110,17 @@ def main():
         logging.info("Creating input file: %s", input_file)
 
         found_header = False
+        found_tail = False
         ost_index = None
         line_number = 0
         split_counter = 1
         split_index = args.split_index
 
         with open(unload_file, 'rb') as reader:
-            with open(input_file, 'w') as writer:
+            with open(input_file, 'w', encoding='utf8') as writer:
+
+                start_time = datetime.now()
+
                 for raw_line in reader:
 
                     matched = None
@@ -124,36 +134,60 @@ def main():
                         logging.error("Decoding failed for line (%i): %s", line_number, line)
                         continue
 
-                    if found_header:
+                    if found_header and not found_tail:
 
                         if not line.strip():
                             continue
 
                         matched = REGEX_PATTERN_BODY.match(line)
 
-                        if not matched:
-                            logging.error("No regex match for line (%i): %s", line_number, line)
-                            continue
+                        if matched:
 
-                        if split_index > 1:
+                            if split_index > 1:
 
-                            if split_counter != split_index:
+                                if split_counter != split_index:
 
-                                split_counter += 1
+                                    split_counter += 1
+                                    continue
+
+                                split_counter = 1
+
+                            writer.write(f"{ost_index} {matched.group(1)}\n")
+
+                        else:
+
+                            matched = REGEX_PATTERN_TAIL.match(line)
+
+                            if matched:
+                                found_tail = True
+                            else:
+                                logging.error("No regex match for line (%i): %s", line_number, line)
                                 continue
 
-                            split_counter = 1
+                    elif not found_header and not found_tail:
 
-                        writer.write(ost_index + ' ' + matched.group(1) + '\n')
-                    else:
                         matched = REGEX_PATTERN_HEADER.match(line)
 
                         if matched:
                             found_header = True
                             ost_index = matched.group(1)
+                        else:
+                            logging.debug("Skipping line before header: %s", line)
+
+                    elif found_tail:
+                        logging.error('Inconsistent file... Tail already found.')
+                        break
+                    else:
+                        raise RuntimeError('Undefined state.') # For completeness.
+
+                time_elapsed = datetime.now() - start_time
+                logging.debug("Time elapsed: %s", time_elapsed)
 
         if not found_header:
             logging.error("No header found - Failed processing unload file: %s", unload_file)
+        if not found_tail:
+            logging.error("No tail found - Failed processing unload file: %s", unload_file)
+
 
 if __name__ == '__main__':
     main()
