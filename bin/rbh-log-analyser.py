@@ -18,18 +18,17 @@
 #
 
 
-import sys
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--input-file", dest="input_file", type=str, 
+parser.add_argument("-i", "--input-file", dest="input_file", type=str,
     help="Robinhood log file.")
-parser.add_argument("-m", "--metric", dest="metric", type=str, 
+parser.add_argument("-m", "--metric", dest="metric", type=str,
     help="Metric to process e.g. a stage name or 'avg. speed'.")
 
 args = parser.parse_args()
 
-print("--- Arguments ---\nLog file: %s\nMetric: %s\n" % 
+print("--- Arguments ---\nLog file: %s\nMetric: %s\n" %
     (args.input_file, args.metric))
 
 class ResultItem:
@@ -50,7 +49,7 @@ def get_stage_values(metric, f):
             fields = line.split('|')
 
             if(len(fields)) == 8:
-                
+
                 count = int(fields[5])
                 value = float(fields[6])
 
@@ -70,7 +69,7 @@ with open(args.input_file) as f:
     if args.metric == 'avg. speed':
 
         for line in f:
-            
+
             if args.metric in line:
 
                 result = line.split(':', 3)[3]
@@ -86,13 +85,13 @@ if result_items:
 
     sum_values = 0
     total_count = 0
-    
+
     # Initialize with first item value.
     min_value = result_items[0].value
     max_value = result_items[0].value
 
     for item in result_items:
-        
+
         sum_values += item.value
         total_count += item.count
 

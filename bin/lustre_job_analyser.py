@@ -39,11 +39,11 @@ def create_jobstat_lines(args):
     jobstats_output = \
         subprocess.check_output(
             [
-                'clush', 
-                '-l', 
-                args.user, 
-                '-w', 
-                args.oss_nodes, 
+                'clush',
+                '-l',
+                args.user,
+                '-w',
+                args.oss_nodes,
                 jobstats_call
             ],
         stderr=subprocess.STDOUT)
@@ -103,7 +103,7 @@ class OSSStatItem:
         self.write_samples = write_samples
 
     def to_string(self):
-        return ("%s:%s:%s" % 
+        return ("%s:%s:%s" %
             (self.oss_name, self.read_samples, self.write_samples))
 
 
@@ -149,8 +149,8 @@ def create_job_stat_info_item_dict(jobstat_lines):
 
         oss_stat_item = \
             OSSStatItem(
-                jobstat_item.oss_name, 
-                read_samples, 
+                jobstat_item.oss_name,
+                read_samples,
                 write_samples)
 
         if job_id in job_stat_info_item_dict:
@@ -228,9 +228,9 @@ def create_squeue_info_item(squeue_line):
 
 def create_squeue_info_list(args, job_id_list):
 
-    # TODO: Check count of job ids and maybe split the list for 
+    # TODO: Check count of job ids and maybe split the list for
     #       multiple squeue calls to do not overloading the SLURM controller!
-    
+
     if not job_id_list:
         raise RuntimeError('job_id_list should not be empty!')
 
@@ -270,7 +270,7 @@ class JobInfoItem:
                         self.group + "|" + \
                         self.command + "|"
 
-        # Since no indexed access is possible in a set, 
+        # Since no indexed access is possible in a set,
         # iterate over it with a counter evaluation...
         item_counter = 1
 
@@ -362,7 +362,7 @@ def main():
 
         len_job_stat_info_item_dict = len(job_stat_info_item_dict)
 
-        logging.debug("len(job_stat_info_item_dict): %s" % 
+        logging.debug("len(job_stat_info_item_dict): %s" %
             len_job_stat_info_item_dict)
 
         if len_job_stat_info_item_dict > 0:
@@ -408,7 +408,7 @@ def main():
                 else:
                     logging.warning("squeue_info_item.job_id not found in " \
                         "job_stat_info_item_dict: %s (Base Job-ID: %s)"
-                            % (squeue_info_item.job_id, 
+                            % (squeue_info_item.job_id,
                                squeue_info_item.base_job_id))
 
             for job_info_item in job_info_item_dict.values():
@@ -430,7 +430,6 @@ def main():
         os._exit(1)
 
     os._exit(0)
-
 
 
 if __name__ == '__main__':

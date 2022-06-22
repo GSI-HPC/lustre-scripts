@@ -27,7 +27,6 @@ from lib.clush.RangeSet import RangeSet
 from lib.version.minimal_python import MinimalPython
 
 
-
 DEFAULT_FILENAME_EXT = '.unl'
 DEFAULT_WORK_DIR = '.'
 HELP_FILENAME_PATTERN = "file_class_ost{INDEX}"
@@ -38,6 +37,10 @@ REGEX_STR_TAIL = r"^Total: \d+ entries, \d+ bytes .*$"
 REGEX_PATTERN_HEADER = re.compile(REGEX_STR_HEADER)
 REGEX_PATTERN_BODY = re.compile(REGEX_STR_BODY)
 REGEX_PATTERN_TAIL = re.compile(REGEX_STR_TAIL)
+
+MIN_SPLIT_INDEX=1
+MAX_SPLIT_INDEX=100
+
 
 def init_logging(log_filename, enable_debug):
 
@@ -50,6 +53,7 @@ def init_logging(log_filename, enable_debug):
         logging.basicConfig(filename=log_filename, level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
     else:
         logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
+
 
 def main():
 
@@ -98,8 +102,8 @@ def main():
             if filename.endswith(args.filename_ext):
                 unload_files.append(os.path.join(args.work_dir, filename))
 
-    if args.split_index < 1 or args.split_index > 10:
-        raise RuntimeError(f"Not supported split index: {args.split_index} - Must be between 1 and 10.")
+    if args.split_index < MIN_SPLIT_INDEX or args.split_index > MAX_SPLIT_INDEX:
+        raise RuntimeError(f"Not supported split index found: {args.split_index} - Must be between {MIN_SPLIT_INDEX} and {MAX_SPLIT_INDEX}.")
 
     if not unload_files:
         logging.info('No unload files have been found.')
