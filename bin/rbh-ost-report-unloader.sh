@@ -17,7 +17,7 @@ if [ $# -ne 3 ]; then
 
     echo "Usage:                       "
     echo "                             "
-    echo "    rbh_ost_files_unloader.sh"
+    echo "   rbh-ost-report-unloader.sh"
     echo "        OST_MIN_INDEX        "
     echo "        OST_MAX_INDEX        "
     echo "        UNLOAD_DIR           "
