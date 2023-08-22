@@ -55,6 +55,29 @@ def init_logging(log_filename, enable_debug):
         logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
 
 
+def decode(raw_line : str) -> str:
+    """
+    Description
+    -----------
+    Decodes raw_line str with default unicode encoding
+
+    Raises
+    ------
+    UnicodeDecodeError if decoding of raw_line failed
+
+    Returns
+    -------
+    A str object for decoded raw_line
+    """
+
+    try:
+        return raw_line.decode(errors='strict')
+    except UnicodeDecodeError:
+        # Might throw an UnicodeDecodeError if further decoding failed
+        new_line = raw_line.decode(encoding='unicode_escape', errors='strict')
+        return new_line
+
+
 def main():
 
     MinimalPython.check()
@@ -128,15 +151,14 @@ def main():
                 for raw_line in reader:
 
                     matched = None
-                    line = None
+
                     line_number += 1
 
                     try:
-                        line = raw_line.decode(errors='strict')
-                    except UnicodeDecodeError:
+                        line = decode(raw_line)
+                    except UnicodeDecodeError as e:
                         line = raw_line.decode(errors='replace')
                         logging.error("Decoding failed for line (%i): %s", line_number, line)
-                        continue
 
                     if found_header and not found_tail:
 
