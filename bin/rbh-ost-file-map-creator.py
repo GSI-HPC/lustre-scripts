@@ -78,7 +78,10 @@ def main():
     unload_files = []
 
     if (args.filename_pattern and not args.ost_indexes) or (args.ost_indexes and not args.filename_pattern):
-        raise RuntimeError('If any of filename-pattern or ost-indexes is set, both must be set.')
+        raise RuntimeError('If any of filename-pattern or ost-indexes is set, both must be set')
+
+    if args.exact_filename and args.work_dir:
+        raise RuntimeError('Parameter exact-filename and work-dir cannot be set at the same time')
 
     if args.exact_filename:
         if os.path.isfile(args.exact_filename):
@@ -87,7 +90,7 @@ def main():
     elif args.ost_indexes:
 
         if not "{INDEX}" in args.filename_pattern:
-            raise RuntimeError("{INDEX} field must be contained in the filename-pattern argument.")
+            raise RuntimeError("{INDEX} field must be contained in the filename-pattern argument")
 
         for index in list(RangeSet(args.ost_indexes).striter()):
             filename = args.filename_pattern.replace('{INDEX}', index, 1) + args.filename_ext
@@ -105,7 +108,7 @@ def main():
         raise RuntimeError(f"Not supported split index found: {args.split_index} - Must be between {MIN_SPLIT_INDEX} and {MAX_SPLIT_INDEX}.")
 
     if not unload_files:
-        logging.info('No unload files have been found.')
+        logging.info('No unload files have been found')
 
     for unload_file in unload_files:
 
@@ -184,7 +187,7 @@ def main():
                         error_counter += 1
                         break
                     else:
-                        raise RuntimeError('Undefined state.') # For completeness.
+                        raise RuntimeError('Undefined state') # For completeness.
 
                 time_elapsed = datetime.now() - start_time
                 logging.debug("Time elapsed: %s", time_elapsed)
