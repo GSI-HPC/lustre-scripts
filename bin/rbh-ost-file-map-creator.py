@@ -55,29 +55,6 @@ def init_logging(log_filename, enable_debug):
         logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
 
 
-def decode(raw_line : str) -> str:
-    """
-    Description
-    -----------
-    Decodes raw_line str with default unicode encoding
-
-    Raises
-    ------
-    UnicodeDecodeError if decoding of raw_line failed
-
-    Returns
-    -------
-    A str object for decoded raw_line
-    """
-
-    try:
-        return raw_line.decode(errors='strict')
-    except UnicodeDecodeError:
-        # Might throw an UnicodeDecodeError if further decoding failed
-        new_line = raw_line.decode(encoding='unicode_escape', errors='strict')
-        return new_line
-
-
 def main():
 
     MinimalPython.check()
@@ -87,7 +64,7 @@ def main():
     parser.add_argument('-f', '--filename-pattern', dest='filename_pattern', type=str, required=False, help=f"For instance: {HELP_FILENAME_PATTERN}, where {{INDEX}} is a placeholder for the OST index.")
     parser.add_argument('-i', '--ost-indexes', dest='ost_indexes', type=str, required=False, help='Defines a RangeSet for the OST indexes e.g. 0-30,75,87-103')
     parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='Defines how to split file content into pieces. Default: 1 - No split.')
-    parser.add_argument('-w', '--work-dir', dest='work_dir', default=DEFAULT_WORK_DIR, type=str, required=False, help=f"Default: '{DEFAULT_WORK_DIR}'")
+    parser.add_argument('-w', '--work-dir', dest='work_dir', default=DEFAULT_WORK_DIR, type=str, required=False, help='Specifies working directory which contains unload files')
     parser.add_argument('-x', '--exact-filename', dest='exact_filename', type=str, required=False, help='Explicit filename to process.')
     parser.add_argument('-l', '--log-file', dest='log_file', type=str, required=False, help='Specifies logging file.')
     parser.add_argument('-D', '--enable-debug', dest='enable_debug', required=False, action='store_true', help='Enables logging of debug messages.')
@@ -96,17 +73,16 @@ def main():
 
     init_logging(args.log_file, args.enable_debug)
 
+    logging.info('STARTED')
+
     unload_files = []
 
     if (args.filename_pattern and not args.ost_indexes) or (args.ost_indexes and not args.filename_pattern):
         raise RuntimeError('If any of filename-pattern or ost-indexes is set, both must be set.')
 
     if args.exact_filename:
-
-        unload_file = os.path.join(args.work_dir, args.exact_filename)
-
-        if os.path.isfile(unload_file):
-            unload_files.append(unload_file)
+        if os.path.isfile(args.exact_filename):
+            unload_files.append(args.exact_filename)
 
     elif args.ost_indexes:
 
@@ -133,13 +109,14 @@ def main():
 
     for unload_file in unload_files:
 
-        input_file = os.path.join(args.work_dir, os.path.basename(unload_file).split('.', 1)[0] + '.input')
+        input_file = f"{unload_file.rsplit('.', 1)[0]}.input"
         logging.info("Creating input file: %s", input_file)
 
         found_header = False
         found_tail = False
         ost_index = None
         line_number = 0
+        error_counter = 0
         split_counter = 1
         split_index = args.split_index
 
@@ -155,10 +132,11 @@ def main():
                     line_number += 1
 
                     try:
-                        line = decode(raw_line)
+                        line = raw_line.decode(errors='strict')
                     except UnicodeDecodeError as e:
                         line = raw_line.decode(errors='replace')
-                        logging.error("Decoding failed for line (%i): %s", line_number, line)
+                        logging.error(f"Decoding failed for line ({line_number}): {line}")
+                        error_counter += 1
 
                     if found_header and not found_tail:
 
@@ -187,7 +165,8 @@ def main():
                             if matched:
                                 found_tail = True
                             else:
-                                logging.error("No regex match for line (%i): %s", line_number, line)
+                                logging.error(f"No regex match for line ({line_number}): {line}")
+                                error_counter += 1
                                 continue
 
                     elif not found_header and not found_tail:
@@ -198,10 +177,11 @@ def main():
                             found_header = True
                             ost_index = matched.group(1)
                         else:
-                            logging.debug("Skipping line before header: %s", line)
+                            logging.debug(f"Skipping line before header: {line}")
 
                     elif found_tail:
                         logging.error('Inconsistent file... Tail already found.')
+                        error_counter += 1
                         break
                     else:
                         raise RuntimeError('Undefined state.') # For completeness.
@@ -209,10 +189,17 @@ def main():
                 time_elapsed = datetime.now() - start_time
                 logging.debug("Time elapsed: %s", time_elapsed)
 
-        if not found_header:
-            logging.error("No header found - Failed processing unload file: %s", unload_file)
-        if not found_tail:
-            logging.error("No tail found - Failed processing unload file: %s", unload_file)
+        if found_header == False:
+            logging.error(f"No header found - Failed processing unload file: {unload_file}")
+            error_counter += 1
+        if found_tail == False:
+            logging.error(f"No tail found - Failed processing unload file: {unload_file}")
+            error_counter += 1
+
+        if error_counter > 0:
+            logging.error(f"Detected {error_counter} errors for file {unload_file}")
+
+    logging.info('FINISHED')
 
 
 if __name__ == '__main__':
