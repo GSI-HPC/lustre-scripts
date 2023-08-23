@@ -28,7 +28,6 @@ from lib.version.minimal_python import MinimalPython
 
 
 DEFAULT_FILENAME_EXT = '.unl'
-DEFAULT_WORK_DIR = '.'
 HELP_FILENAME_PATTERN = "file_class_ost{INDEX}"
 
 REGEX_STR_HEADER = r"^\s*type,\s*size,\s*path,\s*stripe_cnt,\s*stripe_size,\s*pool,\s*stripes,\s*data_on_ost(\d+)$"
@@ -64,7 +63,7 @@ def main():
     parser.add_argument('-f', '--filename-pattern', dest='filename_pattern', type=str, required=False, help=f"For instance: {HELP_FILENAME_PATTERN}, where {{INDEX}} is a placeholder for the OST index.")
     parser.add_argument('-i', '--ost-indexes', dest='ost_indexes', type=str, required=False, help='Defines a RangeSet for the OST indexes e.g. 0-30,75,87-103')
     parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='Defines how to split file content into pieces. Default: 1 - No split.')
-    parser.add_argument('-w', '--work-dir', dest='work_dir', default=DEFAULT_WORK_DIR, type=str, required=False, help='Specifies working directory which contains unload files')
+    parser.add_argument('-w', '--work-dir', dest='work_dir', type=str, required=False, help='Specifies working directory which contains unload files')
     parser.add_argument('-x', '--exact-filename', dest='exact_filename', type=str, required=False, help='Explicit filename to process.')
     parser.add_argument('-l', '--log-file', dest='log_file', type=str, required=False, help='Specifies logging file.')
     parser.add_argument('-D', '--enable-debug', dest='enable_debug', required=False, action='store_true', help='Enables logging of debug messages.')
