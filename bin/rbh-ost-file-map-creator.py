@@ -112,7 +112,7 @@ def main():
     for unload_file in unload_files:
 
         input_file = f"{unload_file.rsplit('.', 1)[0]}.input"
-        logging.info("Creating input file: %s", input_file)
+        logging.debug("Creating input file: %s", input_file)
 
         found_header = False
         found_tail = False
