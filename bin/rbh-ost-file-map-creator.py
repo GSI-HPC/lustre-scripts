@@ -26,20 +26,17 @@ from datetime import datetime
 from lib.clush.RangeSet import RangeSet
 from lib.version.minimal_python import MinimalPython
 
-
 DEFAULT_FILENAME_EXT = '.unl'
 HELP_FILENAME_PATTERN = "file_class_ost{INDEX}"
 
 REGEX_STR_HEADER = r"^\s*type,\s*size,\s*path,\s*stripe_cnt,\s*stripe_size,\s*pool,\s*stripes,\s*data_on_ost(\d+)$"
-REGEX_STR_BODY = r"^\s*file,[^,]+,\s*(.+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[^,]+$"
-REGEX_STR_TAIL = r"^Total: \d+ entries, \d+ bytes .*$"
-REGEX_PATTERN_HEADER = re.compile(REGEX_STR_HEADER)
-REGEX_PATTERN_BODY = re.compile(REGEX_STR_BODY)
-REGEX_PATTERN_TAIL = re.compile(REGEX_STR_TAIL)
-
-MIN_SPLIT_INDEX=1
-MAX_SPLIT_INDEX=100
-
+REGEX_STR_BODY   = r"^\s*file,[^,]+,\s*(.+),\s+\d+,\s+\d+,[^,]+,\s*ost.*,[^,]+$"
+REGEX_STR_TAIL   = r"^Total: \d+ entries, \d+ bytes .*$"
+REGEX_STR_CHUNKS = r"^(\d{1,2})\/(\d{1,2})$"
+REGEX_PATTERN_HEADER   = re.compile(REGEX_STR_HEADER)
+REGEX_PATTERN_BODY     = re.compile(REGEX_STR_BODY)
+REGEX_PATTERN_TAIL     = re.compile(REGEX_STR_TAIL)
+REGEX_PATTERN_CHUNKS   = re.compile(REGEX_STR_CHUNKS)
 
 def init_logging(log_filename, enable_debug):
 
@@ -53,6 +50,23 @@ def init_logging(log_filename, enable_debug):
     else:
         logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s: %(message)s")
 
+def build_chunks(chunks : str) -> tuple[int:int]:
+
+    matched = REGEX_PATTERN_CHUNKS.match(chunks)
+
+    if not matched:
+        raise RuntimeError(f"No regex match for chunks {chunks}")
+
+    n = int(matched.group(1))
+    m = int(matched.group(2))
+
+    if n == 0 or m == 0:
+        raise ValueError('Chunks values are not allowed to be 0')
+
+    if n >= m:
+        raise ValueError(f"Invalid chunk values, n ({n}) must be less than m ({m})")
+
+    return tuple((n, m))
 
 def main():
 
@@ -62,7 +76,7 @@ def main():
     parser.add_argument('-e', '--filename-ext', dest='filename_ext', type=str, required=False, default=DEFAULT_FILENAME_EXT, help=f"Default: {DEFAULT_FILENAME_EXT}")
     parser.add_argument('-f', '--filename-pattern', dest='filename_pattern', type=str, required=False, help=f"For instance: {HELP_FILENAME_PATTERN}, where {{INDEX}} is a placeholder for the OST index.")
     parser.add_argument('-i', '--ost-indexes', dest='ost_indexes', type=str, required=False, help='Defines a RangeSet for the OST indexes e.g. 0-30,75,87-103')
-    parser.add_argument('-s', '--split-index', dest='split_index', type=int, required=False, default=1, help='Defines how to split file content into pieces. Default: 1 - No split.')
+    parser.add_argument('-c', '--chunks', dest='chunks', type=str, required=False, help='If N/M e.g. 7/10 is defined, N must be smaller than M, so N lines are transformed of M lines.')
     parser.add_argument('-w', '--work-dir', dest='work_dir', type=str, required=False, help='Specifies working directory which contains unload files')
     parser.add_argument('-x', '--exact-filename', dest='exact_filename', type=str, required=False, help='Explicit filename to process.')
     parser.add_argument('-l', '--log-file', dest='log_file', type=str, required=False, help='Specifies logging file.')
@@ -74,7 +88,9 @@ def main():
 
     logging.info('STARTED')
 
-    unload_files = []
+    unload_files : list[str] = []
+    chunk_n : int = 1
+    chunk_m : int = 1
 
     if (args.filename_pattern and not args.ost_indexes) or (args.ost_indexes and not args.filename_pattern):
         raise RuntimeError('If any of filename-pattern or ost-indexes is set, both must be set')
@@ -103,8 +119,8 @@ def main():
             if filename.endswith(args.filename_ext):
                 unload_files.append(os.path.join(args.work_dir, filename))
 
-    if args.split_index < MIN_SPLIT_INDEX or args.split_index > MAX_SPLIT_INDEX:
-        raise RuntimeError(f"Not supported split index found: {args.split_index} - Must be between {MIN_SPLIT_INDEX} and {MAX_SPLIT_INDEX}.")
+    if args.chunks:
+        chunk_n, chunk_m = build_chunks(args.chunks)
 
     if not unload_files:
         logging.info('No unload files have been found')
@@ -119,8 +135,7 @@ def main():
         ost_index = None
         line_number = 0
         error_counter = 0
-        split_counter = 1
-        split_index = args.split_index
+        chunk_counter = 0
 
         with open(unload_file, 'rb') as reader:
             with open(input_file, 'w', encoding='utf8') as writer:
@@ -149,16 +164,17 @@ def main():
 
                         if matched:
 
-                            if split_index > 1:
+                            # Default no chunks: chunk_n, chunk_m = 1
+                            if chunk_n != chunk_m:
+                                chunk_counter += 1
 
-                                if split_counter != split_index:
+                            # Default no chunks: chunk_counter = 0
+                            # With chunks chunk_counter will change
+                            if chunk_counter <= chunk_n:
+                                writer.write(f"{ost_index} {matched.group(1)}\n")
 
-                                    split_counter += 1
-                                    continue
-
-                                split_counter = 1
-
-                            writer.write(f"{ost_index} {matched.group(1)}\n")
+                            if chunk_counter == chunk_m:
+                                chunk_counter = 0
 
                         else:
 
@@ -202,7 +218,6 @@ def main():
             logging.error(f"Detected {error_counter} errors for file {unload_file}")
 
     logging.info('FINISHED')
-
 
 if __name__ == '__main__':
     main()
